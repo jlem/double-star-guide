@@ -1359,6 +1359,8 @@
             <div class="sim-sidebar-section-title">View Readouts</div>
             <div class="sim-modal-stats">
               <div class="readout-item"><span>Power:</span> <strong id="modalPowerVal">—</strong></div>
+              <div class="readout-item"><span>TFOV:</span> <strong id="modalTfovVal">—</strong></div>
+              <div class="readout-item"><span>AFOV:</span> <strong id="modalAfovVal">—</strong></div>
               <div class="readout-item"><span>Dawes:</span> <strong id="modalDawesVal">—</strong></div>
               <div class="readout-item"><span>Rayleigh:</span> <strong id="modalRayleighVal">—</strong></div>
               <div class="readout-item" id="modalDifficultyWrapper"><span>Appearance:</span> <strong id="modalDifficultyVal">—</strong></div>
@@ -2005,6 +2007,14 @@
       const op1 = getOpacity(star.mag1);
       const op2 = getOpacity(star.mag2);
 
+      // Calculate True FOV (TFOV) and Apparent FOV (AFOV) for this viewport
+      const scaleUsed = scaleOverride !== null ? scaleOverride : (0.125 * 400 / 170);
+      const vbUsed = viewBoxSize !== null ? viewBoxSize : 170;
+      const tfovSec = (vbUsed * rayleigh) / (12.5 * scaleUsed);
+      const tfovMin = tfovSec / 60;
+      const afovDeg = (tfovMin * power) / 60;
+      const tfovLabel = tfovMin >= 1.0 ? `${tfovMin.toFixed(1)}'` : `${Math.round(tfovSec)}"`;
+
       return `
         <div class="simulation-box">
           <div class="details-title">🔭 Eyepiece View at ${power}x (${aperture}mm)</div>
@@ -2040,7 +2050,7 @@
               </g>
             </svg>
           </div>
-          <div class="sim-mag-label">${power}x Power | Rayleigh: ${rayleigh.toFixed(2)}&quot;</div>
+          <div class="sim-mag-label">${power}x | TFOV: ${tfovLabel} | AFOV: ~${afovDeg.toFixed(1)}&deg;</div>
         </div>
       `;
     }
@@ -2105,7 +2115,15 @@
       const dawes = 116 / userAperture;
       const rayleigh = 138 / userAperture;
       const power = userAperture * 2;
+
+      const modalTfovSec = (viewBoxSize * rayleigh) / (12.5 * 0.125);
+      const modalTfovMin = modalTfovSec / 60;
+      const modalAfovDeg = (modalTfovMin * power) / 60;
+      const modalTfovStr = modalTfovMin >= 1.0 ? `${modalTfovMin.toFixed(1)}'` : `${Math.round(modalTfovSec)}"`;
+
       document.getElementById('modalPowerVal').innerText = power + 'x';
+      document.getElementById('modalTfovVal').innerText = modalTfovStr;
+      document.getElementById('modalAfovVal').innerText = `~${modalAfovDeg.toFixed(1)}°`;
       document.getElementById('modalDawesVal').innerText = dawes.toFixed(2) + '"';
       document.getElementById('modalRayleighVal').innerText = rayleigh.toFixed(2) + '"';
 
