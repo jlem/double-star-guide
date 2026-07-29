@@ -1914,7 +1914,7 @@
         const flux = Math.pow(2.512, -mag) * Math.pow(aperture, 2);
         const max_flux = 1.0 * Math.pow(150, 2); // Baseline flux: Mag 0 at 150mm
         const relative_flux = flux / max_flux;
-        const op = 0.25 * Math.log10(relative_flux * 10000) + 0.25;
+        const op = 0.2 * Math.log10(relative_flux * 10000) + 0.5;
         return Math.max(0.20, Math.min(1.0, op)).toFixed(2);
       }
       const op1 = getOpacity(star.mag1);
