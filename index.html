@@ -1244,7 +1244,7 @@
     <defs>
       <filter id="sim-glow-blur">
         <!-- Heavily increased glow blur for softer Airy falloff -->
-        <feGaussianBlur stdDeviation="1.5" />
+        <feGaussianBlur stdDeviation="1.2" />
       </filter>
       <filter id="sim-core-blur">
         <!-- Heavily increased core blur to remove hard edges on the spurious disk -->
@@ -1906,7 +1906,7 @@
       const ringRadius1 = glow1 + (2.0 * scale);
       const ringRadius2 = glow2 + (2.0 * scale);
       
-      const ringWidth = 1.0;
+      const ringWidth = 0.8;
 
       // Magnitude-adjusted brightness mapping. Light flux scales with square of aperture (150mm is 6.25x brighter than 60mm).
       // We compress the linear flux logarithmically to map to a [0.15, 1.0] opacity range for the monitor.
@@ -1931,7 +1931,7 @@
                 <!-- 1. Glow (Background, fuzzy) -->
                 <circle cx="${x1}" cy="${y1}" r="${glow1}" fill="${c1}" fill-opacity="0.25" filter="url(#sim-glow-blur)"/>
                 <!-- 2. Diffraction Ring (Middle) -->
-                <circle cx="${x1}" cy="${y1}" r="${ringRadius1}" fill="none" stroke="${c1}" stroke-opacity="0.21" stroke-width="${ringWidth}"/>
+                <circle cx="${x1}" cy="${y1}" r="${ringRadius1}" fill="none" stroke="${c1}" stroke-opacity="0.14" stroke-width="${ringWidth}"/>
                 <!-- 3. Core (Foreground, occludes rings behind it) -->
                 <circle cx="${x1}" cy="${y1}" r="${r1}" fill="${c1}" filter="url(#sim-core-blur)"/>
               </g>
@@ -1941,7 +1941,7 @@
                 <!-- 1. Glow -->
                 <circle cx="${x2}" cy="${y2}" r="${glow2}" fill="${c2}" fill-opacity="0.15" filter="url(#sim-glow-blur)"/>
                 <!-- 2. Diffraction Ring -->
-                <circle cx="${x2}" cy="${y2}" r="${ringRadius2}" fill="none" stroke="${c2}" stroke-opacity="0.21" stroke-width="${ringWidth}"/>
+                <circle cx="${x2}" cy="${y2}" r="${ringRadius2}" fill="none" stroke="${c2}" stroke-opacity="0.14" stroke-width="${ringWidth}"/>
                 <!-- 3. Core -->
                 <circle cx="${x2}" cy="${y2}" r="${r2}" fill="${c2}" filter="url(#sim-core-blur)"/>
               </g>
