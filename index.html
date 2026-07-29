@@ -1147,8 +1147,8 @@
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 16px;
-      width: 90%;
-      max-width: 500px;
+      width: min(92vw, 1200px);
+      height: min(95vh, 1000px);
       z-index: 1001;
       opacity: 0;
       pointer-events: none;
@@ -1156,6 +1156,7 @@
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     .sim-modal.active {
       opacity: 1;
@@ -1166,8 +1167,9 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.25rem 1.5rem;
+      padding: 1rem 1.5rem;
       border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
     }
     .sim-modal-title {
       font-family: var(--font-heading);
@@ -1190,14 +1192,78 @@
     .sim-modal-body {
       padding: 1.5rem;
       display: flex;
-      flex-direction: column;
-      align-items: center;
+      flex-direction: row;
+      gap: 1.5rem;
       background: var(--bg-body);
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .sim-modal-sidebar {
+      width: 250px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      overflow-y: auto;
+    }
+    .sim-sidebar-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .sim-sidebar-section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .sim-modal-stats {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .sim-modal-stats .readout-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.85rem;
+    }
+    .sim-modal-stats .readout-item:last-child {
+      border-bottom: none;
+    }
+    .sim-modal-preset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .sim-modal-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      width: 100%;
+      position: relative;
+      padding: 0.5rem;
+      box-sizing: border-box;
     }
     .sim-modal-svg-wrapper {
-      width: 100%;
-      max-width: 400px;
-      aspect-ratio: 1;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      aspect-ratio: 1 / 1;
       background: #000;
       border-radius: 50%;
       box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.05);
@@ -1205,25 +1271,29 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 1.5rem;
+      box-sizing: border-box;
     }
     .sim-modal-svg-wrapper svg {
       width: 100%;
       height: 100%;
+      display: block;
     }
-    .sim-modal-stats {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    .sim-modal-footer {
-      padding: 1.25rem 1.5rem;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+    
+    @media (max-width: 680px) {
+      .sim-modal {
+        width: 95vw;
+        height: 90vh;
+      }
+      .sim-modal-body {
+        flex-direction: column-reverse;
+        overflow-y: auto;
+      }
+      .sim-modal-sidebar {
+        width: 100%;
+      }
+      .sim-modal-main {
+        min-height: 260px;
+      }
     }
     
     /* Make simulation boxes in the drawer clickable */
@@ -1265,31 +1335,41 @@
         <button class="sim-modal-close" id="simModalClose">&times;</button>
       </div>
       <div class="sim-modal-body">
-        <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper">
-          <!-- SVG rendered here -->
-        </div>
-        <div class="sim-modal-stats">
-          <div class="readout-item"><span>Power:</span> <strong id="modalPowerVal">—</strong></div>
-          <div class="readout-item"><span>Dawes:</span> <strong id="modalDawesVal">—</strong></div>
-          <div class="readout-item"><span>Rayleigh:</span> <strong id="modalRayleighVal">—</strong></div>
-          <div class="readout-item" id="modalDifficultyWrapper"><span>Appearance:</span> <strong id="modalDifficultyVal">—</strong></div>
-        </div>
-      </div>
-      <div class="sim-modal-footer">
-        <div class="filter-group">
-          <label class="filter-label" for="modalApertureInput">
-            <span>Simulation Aperture (mm)</span>
-          </label>
-          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <input type="number" id="modalApertureInput" class="input-control" placeholder="e.g. 80" min="30" max="400" style="max-width: 100px;">
+        <!-- Left Sidebar: Aperture Controls & View Readouts -->
+        <div class="sim-modal-sidebar">
+          <div class="sim-sidebar-section">
+            <div class="sim-sidebar-section-title">Aperture Control</div>
+            <div class="filter-group">
+              <label class="filter-label" for="modalApertureInput" style="margin-bottom: 0.4rem;">
+                <span>Aperture (mm)</span>
+              </label>
+              <input type="number" id="modalApertureInput" class="input-control" placeholder="e.g. 80" min="30" max="400" style="width: 100%; margin-bottom: 0.5rem;">
+              <div class="sim-modal-preset-grid">
+                <button class="preset-chip modal-preset-chip" data-aperture="60">60mm</button>
+                <button class="preset-chip modal-preset-chip" data-aperture="80">80mm</button>
+                <button class="preset-chip modal-preset-chip" data-aperture="100">100mm</button>
+                <button class="preset-chip modal-preset-chip" data-aperture="115">115mm</button>
+                <button class="preset-chip modal-preset-chip" data-aperture="130">130mm</button>
+                <button class="preset-chip modal-preset-chip" data-aperture="150">150mm</button>
+              </div>
+            </div>
           </div>
-          <div class="preset-row">
-            <button class="preset-chip modal-preset-chip" data-aperture="60">60mm</button>
-            <button class="preset-chip modal-preset-chip" data-aperture="80">80mm</button>
-            <button class="preset-chip modal-preset-chip" data-aperture="100">100mm</button>
-            <button class="preset-chip modal-preset-chip" data-aperture="115">115mm</button>
-            <button class="preset-chip modal-preset-chip" data-aperture="130">130mm</button>
-            <button class="preset-chip modal-preset-chip" data-aperture="150">150mm</button>
+
+          <div class="sim-sidebar-section">
+            <div class="sim-sidebar-section-title">View Readouts</div>
+            <div class="sim-modal-stats">
+              <div class="readout-item"><span>Power:</span> <strong id="modalPowerVal">—</strong></div>
+              <div class="readout-item"><span>Dawes:</span> <strong id="modalDawesVal">—</strong></div>
+              <div class="readout-item"><span>Rayleigh:</span> <strong id="modalRayleighVal">—</strong></div>
+              <div class="readout-item" id="modalDifficultyWrapper"><span>Appearance:</span> <strong id="modalDifficultyVal">—</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Area: Simulation Viewport (FOV) -->
+        <div class="sim-modal-main">
+          <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper">
+            <!-- SVG rendered here -->
           </div>
         </div>
       </div>
@@ -1847,7 +1927,7 @@
     }
 
     // Render Eyepiece Simulation SVG Viewport at 2x/mm Aperture Power
-    function createEyepieceSimSVG(star, aperture, scaleOverride = null) {
+    function createEyepieceSimSVG(star, aperture, scaleOverride = null, viewBoxSize = null) {
       if (!aperture || aperture <= 0) {
         return `
           <div class="simulation-box" style="cursor: default;">
@@ -1871,7 +1951,7 @@
       const c1 = isNight ? "#ff3333" : star.color1;
       const c2 = isNight ? "#ff3333" : star.color2;
 
-      // Adjust apparent visual separation based on the same glare/contrast logic used in difficulty calculation
+      // Adjust apparent visual separation based on glare/contrast logic
       const effectiveSep = star.sep / contrastMultiplier;
       const sepPixels = (effectiveSep / rayleigh) * 12.5;
       
@@ -1882,11 +1962,12 @@
       const scale = scaleOverride !== null ? scaleOverride : 0.25;
       const scaledVisualSep = visualSep * scale;
 
-      const cx = 85;
-      const cy = 85;
+      const vb = viewBoxSize !== null ? viewBoxSize : 170;
+      const cx = vb / 2;
+      const cy = vb / 2;
 
       const angleRad = (star.pa - 90) * (Math.PI / 180);
-      const halfSep = Math.min(65, scaledVisualSep / 2);
+      const halfSep = Math.min(vb / 2 - 10, scaledVisualSep / 2);
 
       const x1 = cx - halfSep * Math.cos(angleRad);
       const y1 = cy - halfSep * Math.sin(angleRad);
@@ -1909,17 +1990,11 @@
       const ringWidth = 0.8;
 
       // Magnitude-adjusted brightness mapping. Light flux scales with square of aperture (150mm is 6.25x brighter than 60mm).
-      // We compress the linear flux logarithmically to map to a [0.15, 1.0] opacity range for the monitor.
       function getOpacity(mag) {
-        // True physical flux scales geometrically with the square of the aperture
         const baseFlux = Math.pow(2.512, -mag);
         const apertureFlux = baseFlux * Math.pow(aperture, 2);
-        
-        // Convert to a logarithmic scale, and map to a sensible visual opacity range
-        // This ensures 60mm isn't invisible, and 600mm scales smoothly across the dynamic range
         const logFlux = Math.log10(apertureFlux);
         const op = 0.40 + (logFlux * 0.45);
-        
         return Math.max(0.15, Math.min(1.0, op)).toFixed(2);
       }
       const op1 = getOpacity(star.mag1);
@@ -1929,7 +2004,7 @@
         <div class="simulation-box">
           <div class="details-title">🔭 Eyepiece View at ${power}x (${aperture}mm)</div>
           <div class="eyepiece-viewport">
-            <svg class="sim-canvas" viewBox="0 0 170 170" style="filter: saturate(0.5);">
+            <svg class="sim-canvas" viewBox="0 0 ${vb} ${vb}" style="filter: saturate(0.5);">
 
               <!-- Primary Star Wrapper -->
               <g opacity="${op1}">
@@ -1958,6 +2033,8 @@
     }
 
     // Modal Controller logic
+    let modalResizeObserver = null;
+
     function openSimulationModal(starId) {
       if (!userAperture) return;
       currentModalStarId = starId;
@@ -1965,13 +2042,29 @@
       document.getElementById('simModal').classList.add('active');
       const modalApertureInput = document.getElementById('modalApertureInput');
       modalApertureInput.value = userAperture;
+
       renderSimulationModal();
+
+      if (!modalResizeObserver && typeof ResizeObserver !== 'undefined') {
+        modalResizeObserver = new ResizeObserver(() => {
+          if (currentModalStarId) {
+            renderSimulationModal();
+          }
+        });
+      }
+      const wrapper = document.getElementById('simModalSvgWrapper');
+      if (wrapper && modalResizeObserver) {
+        modalResizeObserver.observe(wrapper);
+      }
     }
 
     function closeSimulationModal() {
       document.getElementById('simModalBackdrop').classList.remove('active');
       document.getElementById('simModal').classList.remove('active');
       currentModalStarId = null;
+      if (modalResizeObserver) {
+        modalResizeObserver.disconnect();
+      }
     }
 
     function renderSimulationModal() {
@@ -1981,12 +2074,18 @@
 
       document.getElementById('simModalTitle').innerText = `${star.name} Simulation`;
 
-      // Render 0.25x scale SVG to match drawer physical star sizes, but allowing massive FOV inside the modal
-      const rawHtml = createEyepieceSimSVG(star, userAperture, 0.25);
+      const wrapper = document.getElementById('simModalSvgWrapper');
+      const wrapperWidth = wrapper ? (wrapper.clientWidth || wrapper.getBoundingClientRect().width || 400) : 400;
+      // Reference standard: 170 viewBox units at 400px container width.
+      // Scaling viewBoxSize linearly with container width maintains a constant screen pixel scale (400/170 = 2.3529 px/unit)
+      // so star sizes and separation in pixels remain unchanged while FOV circle scales.
+      const viewBoxSize = 170 * (wrapperWidth / 400);
+
+      const rawHtml = createEyepieceSimSVG(star, userAperture, 0.25, viewBoxSize);
       
       const svgMatch = rawHtml.match(/<svg[\s\S]*<\/svg>/);
-      if (svgMatch) {
-        document.getElementById('simModalSvgWrapper').innerHTML = svgMatch[0];
+      if (svgMatch && wrapper) {
+        wrapper.innerHTML = svgMatch[0];
       }
 
       // Update Modal Stats
@@ -2001,7 +2100,7 @@
       const diffWrapper = document.getElementById('modalDifficultyWrapper');
       const diffVal = document.getElementById('modalDifficultyVal');
       if (diff) {
-        diffWrapper.style.display = 'block';
+        diffWrapper.style.display = 'flex';
         diffVal.innerHTML = `<span style="color:${diff.color}">${diff.label}</span>`;
       } else {
         diffWrapper.style.display = 'none';
