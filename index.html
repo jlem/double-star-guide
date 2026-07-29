@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Double Stars Visual Observing Guide | 60mm–115mm Telescopes</title>
+  <meta name="description" content="A comprehensive, visual observing guide for double stars tailored for 60mm to 115mm small telescopes. Filterable by separation, magnitude, color contrast, and constellation.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Astronomical Dark Palette */
+      --bg-body: #07090e;
+      --bg-card: #0f1420;
+      --bg-card-hover: #161e30;
+      --bg-input: #151c2d;
+      --border-color: #202b42;
+      --border-focus: #3b82f6;
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --accent-blue: #3b82f6;
+      --accent-cyan: #60a5fa;
+      --accent-gold: #fbbf24;
+      --accent-amber: #f59e0b;
+      --accent-purple: #c084fc;
+      --accent-emerald: #34d399;
+
+      --font-heading: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Red-Light Night Vision Mode for Field Observing */
+    body.night-vision {
+      --bg-body: #050000;
+      --bg-card: #140000;
+      --bg-card-hover: #220000;
+      --bg-input: #1a0000;
+      --border-color: #4a0000;
+      --border-focus: #ff0000;
+      --text-main: #ff3333;
+      --text-muted: #cc2222;
+      --text-dim: #881111;
+      --accent-blue: #ff0000;
+      --accent-cyan: #ff2222;
+      --accent-gold: #ff4444;
+      --accent-amber: #ff2222;
+      --accent-purple: #ff0000;
+      --accent-emerald: #ff3333;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      line-height: 1.5;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 85% 75%, rgba(192, 132, 252, 0.03) 0%, transparent 40%);
+      background-attachment: fixed;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Expanded Container Width (1600px) */
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem 1.25rem;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1.5rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(251, 191, 36, 0.2));
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-gold);
+    }
+
+    .brand-title {
+      font-family: var(--font-heading);
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(120deg, #fef08a 0%, #f59e0b 12%, #60a5fa 45%, #2563eb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    body.night-vision .brand-title {
+      background: none;
+      -webkit-background-clip: initial;
+      -webkit-text-fill-color: initial;
+      color: var(--text-main);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1.1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--border-focus);
+      background: var(--bg-card-hover);
+    }
+
+    .btn-secondary .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    /* Seamless Borderless Resolution Reference Strip */
+    .resolution-strip {
+      margin-bottom: 2rem;
+      padding: 0.25rem 0;
+    }
+
+    .resolution-columns {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1.25rem;
+      align-items: flex-start;
+    }
+
+    .res-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .res-icon {
+      width: 130px;
+      height: 75px;
+      object-fit: contain;
+      margin-bottom: 0.5rem;
+    }
+
+    body.night-vision .res-icon {
+      filter: brightness(0.85) sepia(100%) hue-rotate(-50deg) saturate(600%);
+    }
+
+    .res-term-main {
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    /* Streamlined Filter Toolbar */
+    .filter-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .filter-label {
+      font-size: 0.825rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .input-control, .select-control {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .input-control:focus, .select-control:focus {
+      border-color: var(--border-focus);
+    }
+
+    .select-control optgroup {
+      background: #0f1420;
+      color: #fef08a;
+      font-weight: 700;
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
+      padding: 0.4rem 0.2rem;
+    }
+
+    .select-control optgroup[label*="Out-of-Season"] {
+      color: #60a5fa;
+    }
+
+    body.night-vision .select-control optgroup {
+      background: #1a0000;
+      color: #ff3333;
+    }
+
+    .select-control option {
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-weight: 500;
+      font-family: var(--font-body);
+      padding: 0.35rem 0.5rem;
+    }
+
+    /* Chips Filter Bar */
+    .chips-row {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 0.5rem;
+      align-items: center;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--border-color);
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .chips-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-right: 0.5rem;
+      white-space: nowrap;
+    }
+
+    .chip {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .chip:hover {
+      border-color: var(--border-focus);
+      color: var(--text-main);
+    }
+
+    .chip.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    body.night-vision .chip.active {
+      background: rgba(255, 0, 0, 0.2);
+      border-color: #ff0000;
+      color: #ff3333;
+    }
+
+    .btn-reset {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: auto;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .btn-reset:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+      color: #ffffff;
+    }
+
+    body.night-vision .btn-reset {
+      background: rgba(255, 0, 0, 0.15);
+      border-color: rgba(255, 0, 0, 0.4);
+      color: #ff3333;
+    }
+
+    /* Table Controls & View Options */
+    .table-header-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .results-count {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .results-count strong {
+      color: var(--text-main);
+    }
+
+    /* Main Data Table */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow-x: auto;
+      box-shadow: var(--shadow-sm);
+    }
+
+    table.double-stars-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    th {
+      background: rgba(15, 20, 32, 0.85);
+      padding: 1rem;
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 0.825rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      transition: color 0.2s ease;
+    }
+
+    th:hover {
+      color: var(--text-main);
+    }
+
+    th .sort-arrow {
+      display: inline-block;
+      margin-left: 0.35rem;
+      font-size: 0.75rem;
+      opacity: 0.3;
+      transition: opacity 0.2s ease;
+    }
+
+    th.active-sort {
+      color: var(--accent-blue);
+    }
+
+    th.active-sort .sort-arrow {
+      opacity: 1;
+      color: var(--accent-blue);
+    }
+
+    td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    tbody tr {
+      transition: background-color 0.15s ease;
+      cursor: pointer;
+    }
+
+    tbody tr:hover {
+      background-color: var(--bg-card-hover);
+    }
+
+    tbody tr.expanded-row {
+      background-color: rgba(59, 130, 246, 0.04);
+    }
+
+    /* Visual Star Render Column */
+    .visual-cell {
+      width: 170px;
+      min-width: 170px;
+      padding: 0.5rem 0.75rem;
+    }
+
+    .star-preview-box {
+      width: 100%;
+      height: 48px;
+      background: #04060a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body.night-vision .star-preview-box {
+      background: #020000;
+      border-color: rgba(255, 0, 0, 0.2);
+    }
+
+    .star-preview-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Star Data Cells */
+    .star-name {
+      font-weight: 700;
+      font-size: 0.975rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .bayer-designation {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent-blue);
+    }
+
+    .constellation-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Dedicated Season Badge Column */
+    .season-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 20px;
+      font-size: 0.775rem;
+      font-weight: 600;
+      text-transform: capitalize;
+      border: 1px solid var(--border-color);
+      background: var(--bg-input);
+    }
+
+    .season-spring {
+      color: #f472b6;
+      border-color: rgba(244, 114, 182, 0.3);
+      background: rgba(244, 114, 182, 0.08);
+    }
+
+    .season-summer {
+      color: #fbbf24;
+      border-color: rgba(251, 191, 36, 0.3);
+      background: rgba(251, 191, 36, 0.08);
+    }
+
+    .season-autumn {
+      color: #fb923c;
+      border-color: rgba(251, 146, 60, 0.3);
+      background: rgba(251, 146, 60, 0.08);
+    }
+
+    .season-winter {
+      color: #60a5fa;
+      border-color: rgba(96, 165, 250, 0.3);
+      background: rgba(96, 165, 250, 0.08);
+    }
+
+    .mag-values {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .delta-mag-text {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .separation-cell {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+
+    .sep-bar-bg {
+      width: 100%;
+      height: 4px;
+      background: var(--bg-input);
+      border-radius: 2px;
+      margin-top: 0.3rem;
+      overflow: hidden;
+    }
+
+    .sep-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #60a5fa, #3b82f6);
+      border-radius: 2px;
+    }
+
+    /* Color Swatches Pill inside Drawer Details */
+    .color-chip-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.775rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      margin-right: 0.4rem;
+    }
+
+    .color-chip-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    /* Drawer / Expanded Row Details */
+    .details-row td {
+      background: rgba(10, 14, 23, 0.7);
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    body.night-vision .details-row td {
+      background: rgba(20, 0, 0, 0.9);
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .details-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+
+    .details-title {
+      font-size: 0.775rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .details-text {
+      font-size: 0.875rem;
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+
+    .key-value-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-family: var(--font-mono);
+      font-size: 0.825rem;
+    }
+
+    .key-value-item {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .key-value-item .key {
+      color: var(--text-muted);
+    }
+
+    .key-value-item .val {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    /* Hardware Accelerated 60fps Slide-Out Observing Guide Drawer */
+    .guide-drawer-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s linear;
+    }
+
+    .guide-drawer-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .guide-drawer-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 760px;
+      max-width: 94vw;
+      height: 100vh;
+      background: var(--bg-card);
+      border-left: 1px solid var(--border-color);
+      box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+      z-index: 1001;
+      transform: translate3d(100%, 0, 0);
+      will-change: transform;
+      transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .guide-drawer-panel.active {
+      transform: translate3d(0, 0, 0);
+    }
+
+    .guide-drawer-header {
+      padding: 1.25rem 1.75rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+    }
+
+    .guide-drawer-title {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .guide-close-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .guide-close-btn:hover {
+      color: var(--text-main);
+      border-color: var(--border-focus);
+    }
+
+    .guide-drawer-body {
+      padding: 1.75rem;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      line-height: 1.75;
+      font-size: 1.05rem;
+      color: var(--text-main);
+    }
+
+    /* Clean Unboxed Sections in Slide-Out Panel */
+    .guide-section {
+      background: none;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+    }
+
+    .guide-section:not(:last-child) {
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .guide-section-title {
+      font-family: var(--font-heading);
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .guide-title-text {
+      background: linear-gradient(120deg, #fef08a 0%, #f59e0b 12%, #60a5fa 45%, #2563eb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    body.night-vision .guide-title-text {
+      background: none;
+      -webkit-background-clip: initial;
+      -webkit-text-fill-color: initial;
+      color: var(--text-main);
+    }
+
+    .guide-text p {
+      margin-bottom: 1.1rem;
+      color: var(--text-main);
+      font-size: 1.025rem;
+    }
+
+    .guide-text p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Unboxed Clean vs. Turbulent Speckling Graphic Component */
+    .airy-comparison-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0 3rem 0;
+      align-items: flex-end;
+    }
+
+    .airy-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      background: rgba(59, 130, 246, 0.04);
+      border: 1px solid rgba(59, 130, 246, 0.12);
+      border-radius: 12px;
+      padding: 1.25rem 1rem;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .airy-col:hover {
+      background: rgba(59, 130, 246, 0.07);
+      border-color: rgba(59, 130, 246, 0.25);
+    }
+
+    body.night-vision .airy-col {
+      background: rgba(255, 0, 0, 0.05);
+      border-color: rgba(255, 0, 0, 0.15);
+    }
+
+    .airy-img-viewport {
+      height: 85px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .airy-img-clean {
+      width: 70px;
+      height: 40px;
+      object-fit: contain;
+    }
+
+    .airy-img-speckled {
+      width: 140px;
+      height: 80px;
+      object-fit: contain;
+    }
+
+    body.night-vision .airy-img-clean,
+    body.night-vision .airy-img-speckled {
+      filter: brightness(0.85) sepia(100%) hue-rotate(-50deg) saturate(600%);
+    }
+
+    .airy-card-title {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .airy-card-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    /* Reference Table inside Drawer */
+    table.aperture-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.925rem;
+      margin-top: 0.85rem;
+      font-family: var(--font-mono);
+    }
+
+    table.aperture-table th {
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.75rem 0.85rem;
+      text-transform: none;
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
+    }
+
+    table.aperture-table td {
+      padding: 0.7rem 0.85rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Empty State */
+    .empty-state {
+      padding: 3rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      opacity: 0.5;
+    }
+
+    /* Responsive styling */
+    @media (max-width: 1100px) {
+      .resolution-columns {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem 1rem;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+      .visual-cell {
+        width: 140px;
+        min-width: 140px;
+      }
+    }
+
+    @media (max-width: 650px) {
+      .container {
+        padding: 1rem 0.5rem;
+      }
+      .resolution-columns {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .brand-title {
+        font-size: 1.4rem;
+      }
+      .airy-comparison-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            <circle cx="19" cy="5" r="2.5" fill="currentColor"></circle>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Double Stars Observing Guide</h1>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-secondary" id="guideToggleBtn" title="Open Field Observing Guide & Tips">
+          <span>📖 Observing Guide</span>
+        </button>
+        <button class="btn-secondary" id="nightVisionToggle" title="Toggle red-light observing mode to protect dark adaptation">
+          <span class="dot"></span>
+          <span id="nightVisionLabel">Red-Light Vision</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Seamless Borderless Double Star Resolution Terms -->
+    <div class="resolution-strip">
+      <div class="resolution-columns">
+        <!-- 1. unresolved -->
+        <div class="res-col">
+          <img class="res-icon" src="icon_unresolved.png" alt="unresolved double star optical icon">
+          <div class="res-term-main">unresolved</div>
+        </div>
+
+        <!-- 2. elongated -->
+        <div class="res-col">
+          <img class="res-icon" src="icon_elongated.png" alt="elongated double star optical icon">
+          <div class="res-term-main">elongated</div>
+        </div>
+
+        <!-- 3. notched -->
+        <div class="res-col">
+          <img class="res-icon" src="icon_resolved_notched.png" alt="notched double star optical icon">
+          <div class="res-term-main">notched</div>
+        </div>
+
+        <!-- 4. split -->
+        <div class="res-col">
+          <img class="res-icon" src="icon_hairline_split.png" alt="split double star optical icon">
+          <div class="res-term-main">split</div>
+        </div>
+
+        <!-- 5. separated -->
+        <div class="res-col">
+          <img class="res-icon" src="icon_split.png" alt="separated double star optical icon">
+          <div class="res-term-main">separated</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Streamlined Filter Toolbar -->
+    <div class="filter-panel">
+      <div class="filter-grid">
+        <!-- Search Input -->
+        <div class="filter-group">
+          <label class="filter-label" for="searchInput">Search Designation / Name</label>
+          <input type="text" id="searchInput" class="input-control" placeholder="e.g. Albireo, Algieba, Castor, Cyg, Beta...">
+        </div>
+
+        <!-- Constellation Dropdown -->
+        <div class="filter-group">
+          <label class="filter-label" for="constellationSelect">Constellation</label>
+          <select id="constellationSelect" class="select-control">
+            <option value="ALL">All Constellations</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick Filter Chips -->
+      <div class="chips-row">
+        <span class="chips-title">Quick Filters:</span>
+        <button class="chip active" data-filter="all">All Pairs</button>
+        <button class="chip" data-filter="showcase">⭐ Showcase Gems</button>
+        <button class="chip" data-filter="high-contrast">🎨 High Color Contrast</button>
+        <button class="chip" data-filter="twins">👯 Equal Twins (&Delta;m &le; 0.5)</button>
+        <button class="chip" data-filter="tight">🔍 Tight (1.2" - 5.0")</button>
+        <button class="chip" data-filter="wide">🔭 Wide (20.0" - 50.0")</button>
+        <button class="chip" data-filter="spring">🌸 Spring</button>
+        <button class="chip" data-filter="summer">☀️ Summer</button>
+        <button class="chip" data-filter="autumn">🍂 Autumn</button>
+        <button class="chip" data-filter="winter">❄️ Winter</button>
+        <button class="btn-reset" id="resetFiltersBtn" title="Reset search, constellation dropdown, quick filters, and sort order">↺ Reset</button>
+      </div>
+    </div>
+
+    <!-- Table Toolbar -->
+    <div class="table-header-controls">
+      <div class="results-count" id="resultsText">Showing 0 double stars</div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="table-container">
+      <table class="double-stars-table" id="starsTable">
+        <thead>
+          <tr>
+            <th style="width: 170px;">Visual Pair</th>
+            <th data-sort="name">Designation <span class="sort-arrow" id="arrow-name">▲</span></th>
+            <th data-sort="constellation">Constellation <span class="sort-arrow" id="arrow-constellation">▲</span></th>
+            <th data-sort="season">Season <span class="sort-arrow" id="arrow-season">▲</span></th>
+            <th data-sort="mag1" class="active-sort">Magnitudes <span class="sort-arrow" id="arrow-mag1">▲</span></th>
+            <th data-sort="delta">&Delta; Mag <span class="sort-arrow" id="arrow-delta">▲</span></th>
+            <th data-sort="sep">Separation (") <span class="sort-arrow" id="arrow-sep">▲</span></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Dynamically populated via JS -->
+        </tbody>
+      </table>
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <div class="empty-icon">🔭</div>
+        <h3>No Double Stars Match Your Criteria</h3>
+        <p>Try resetting the search term or constellation filter.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Hardware-Accelerated 60fps Slide-Out Observing Guide Drawer -->
+  <div class="guide-drawer-backdrop" id="guideBackdrop"></div>
+  <aside class="guide-drawer-panel" id="guidePanel" aria-label="Double Star Visual Observing Guide">
+    <div class="guide-drawer-header">
+      <div class="guide-drawer-title">
+        <span>📖</span> Visual Observing Guide &amp; Field Tips
+      </div>
+      <button class="guide-close-btn" id="guideCloseBtn" title="Close Guide">&times;</button>
+    </div>
+
+    <div class="guide-drawer-body">
+      <!-- Section 1: General Tips & Introduction -->
+      <div class="guide-section">
+        <div class="guide-section-title"><span>🔭</span> <span class="guide-title-text">General Tips &amp; Techniques</span></div>
+        <div class="guide-text">
+          <p>Observing double stars is a rewarding pursuit that does not require a large telescope. In fact, small-to-modest apertures are often preferred because they suffer less from atmospheric seeing turbulence, producing cleaner, more stable diffraction patterns.</p>
+          <p>A star's visual appearance through a telescope is defined by its Airy pattern (or Airy disk) — the concentric diffraction rings created as starlight passes through the optical aperture. This pattern is best examined at high magnification (typically 2x per millimeter of aperture).</p>
+          
+          <!-- Unboxed Clean Airy Pattern vs. Speckling Comparison -->
+          <div class="airy-comparison-container">
+            <div class="airy-col">
+              <div class="airy-img-viewport">
+                <img src="icon_unresolved.png" alt="Clean Airy Pattern" class="airy-img-clean">
+              </div>
+              <div class="airy-card-title">Clean Airy Pattern</div>
+              <div class="airy-card-sub">Requires good seeing. More easily achieved in smaller apertures. Makes resolving close doubles at the aperture limit easier.</div>
+            </div>
+            <div class="airy-col">
+              <div class="airy-img-viewport">
+                <img src="speckled_pattern.png" alt="Turbulent Speckling" class="airy-img-speckled">
+              </div>
+              <div class="airy-card-title">Turbulent Speckling</div>
+              <div class="airy-card-sub">Broken pattern in poor seeing. Common in larger apertures. Makes resolving close doubles difficult or impossible.</div>
+            </div>
+          </div>
+
+          <p>Double star targets vary widely in separation, magnitude difference (&Delta;m), and color contrast. While some pairs are binary systems bound by gravity, others are coincidental optical line-of-sight alignments.</p>
+          <p>Resolving tight pairs depends on aperture, optical quality, and atmospheric stability. Larger apertures provide finer resolving power — mathematically defined by the Dawes and Rayleigh limits — allowing closer separations to be split when skies are calm.</p>
+        </div>
+      </div>
+
+      <!-- Section 2: Double Star Resolution Reference -->
+      <div class="guide-section">
+        <div class="guide-section-title"><span>✨</span> <span class="guide-title-text">Double Star Resolution Reference</span></div>
+        <p style="margin-bottom: 1.1rem; color: var(--text-muted); font-size: 0.95rem;">
+          Visual reference for double star Airy patterns
+        </p>
+        
+        <div class="resolution-columns" style="gap: 0.75rem;">
+          <div class="res-col">
+            <img class="res-icon" src="icon_unresolved.png" alt="unresolved double star icon" style="width: 105px; height: 62px;">
+            <div class="res-term-main" style="font-size: 0.9rem;">unresolved</div>
+          </div>
+          <div class="res-col">
+            <img class="res-icon" src="icon_elongated.png" alt="elongated double star icon" style="width: 105px; height: 62px;">
+            <div class="res-term-main" style="font-size: 0.9rem;">elongated</div>
+          </div>
+          <div class="res-col">
+            <img class="res-icon" src="icon_resolved_notched.png" alt="notched double star icon" style="width: 105px; height: 62px;">
+            <div class="res-term-main" style="font-size: 0.9rem;">notched</div>
+          </div>
+          <div class="res-col">
+            <img class="res-icon" src="icon_hairline_split.png" alt="split double star icon" style="width: 105px; height: 62px;">
+            <div class="res-term-main" style="font-size: 0.9rem;">split</div>
+          </div>
+          <div class="res-col">
+            <img class="res-icon" src="icon_split.png" alt="separated double star icon" style="width: 105px; height: 62px;">
+            <div class="res-term-main" style="font-size: 0.9rem;">separated</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Aperture & Resolution Limits Reference Table -->
+      <div class="guide-section">
+        <div class="guide-section-title"><span>📐</span> <span class="guide-title-text">Aperture vs. Separation Recommendations</span></div>
+        <p style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.95rem;">
+          Theoretical separation limits for small telescopes under stable seeing conditions:
+        </p>
+        <table class="aperture-table">
+          <thead>
+            <tr>
+              <th>Aperture</th>
+              <th>Dawes Limit</th>
+              <th>Rayleigh Limit</th>
+              <th>High Power (2x/mm)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>60mm (2.4")</strong></td>
+              <td>1.93"</td>
+              <td>2.30"</td>
+              <td>120x</td>
+            </tr>
+            <tr>
+              <td><strong>70mm (2.8")</strong></td>
+              <td>1.66"</td>
+              <td>1.97"</td>
+              <td>140x</td>
+            </tr>
+            <tr>
+              <td><strong>80mm (3.1")</strong></td>
+              <td>1.45"</td>
+              <td>1.73"</td>
+              <td>160x</td>
+            </tr>
+            <tr>
+              <td><strong>90mm (3.5")</strong></td>
+              <td>1.29"</td>
+              <td>1.53"</td>
+              <td>180x</td>
+            </tr>
+            <tr>
+              <td><strong>100mm (4.0")</strong></td>
+              <td>1.16"</td>
+              <td>1.38"</td>
+              <td>200x</td>
+            </tr>
+            <tr>
+              <td><strong>115mm (4.5")</strong></td>
+              <td>1.01"</td>
+              <td>1.20"</td>
+              <td>230x</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    // State Variables
+    let DOUBLE_STARS_DATA = [];
+    let currentData = [];
+    let activeFilterChip = "all";
+    let isNightVision = false;
+
+    // Active Sort State (Default: Magnitude Brightest to Dimmest)
+    let activeSortKey = "mag1";
+    let activeSortDir = "asc";
+
+    // DOM Elements
+    const tableBody = document.getElementById("tableBody");
+    const searchInput = document.getElementById("searchInput");
+    const constellationSelect = document.getElementById("constellationSelect");
+    const emptyState = document.getElementById("emptyState");
+    const resultsText = document.getElementById("resultsText");
+    const nightVisionToggle = document.getElementById("nightVisionToggle");
+    const nightVisionLabel = document.getElementById("nightVisionLabel");
+    const resetFiltersBtn = document.getElementById("resetFiltersBtn");
+
+    // Drawer Elements
+    const guideToggleBtn = document.getElementById("guideToggleBtn");
+    const guideCloseBtn = document.getElementById("guideCloseBtn");
+    const guideBackdrop = document.getElementById("guideBackdrop");
+    const guidePanel = document.getElementById("guidePanel");
+
+    // Initialize App & Load Data from double_stars_catalog_expanded.json
+    async function init() {
+      try {
+        const response = await fetch("double_stars_catalog_expanded.json");
+        if (!response.ok) throw new Error("Failed to load expanded catalog JSON");
+        DOUBLE_STARS_DATA = await response.json();
+      } catch (err) {
+        console.warn("Could not fetch double_stars_catalog_expanded.json dynamically, falling back to double_stars_catalog.json", err);
+        try {
+          const res2 = await fetch("double_stars_catalog.json");
+          DOUBLE_STARS_DATA = await res2.json();
+        } catch (err2) {
+          console.error("Failed to load catalog", err2);
+        }
+      }
+
+      currentData = [...DOUBLE_STARS_DATA];
+      populateConstellationDropdown();
+      attachEventListeners();
+      renderTable();
+    }
+
+    // Dynamic Constellation Dropdown Populator
+    function populateConstellationDropdown(activeSeason = null) {
+      const currentSelection = constellationSelect.value;
+      const allConstellations = [...new Set(DOUBLE_STARS_DATA.map(item => item.constellation))].sort();
+
+      if (activeSeason && ["spring", "summer", "autumn", "winter"].includes(activeSeason)) {
+        const inSeasonSet = new Set(
+          DOUBLE_STARS_DATA
+            .filter(star => star.season === activeSeason)
+            .map(star => star.constellation)
+        );
+
+        const inSeasonList = allConstellations.filter(c => inSeasonSet.has(c));
+        const outOfSeasonList = allConstellations.filter(c => !inSeasonSet.has(c));
+
+        const seasonLabel = activeSeason.charAt(0).toUpperCase() + activeSeason.slice(1);
+        let html = '<option value="ALL">All Constellations</option>';
+
+        if (inSeasonList.length > 0) {
+          html += `<optgroup label="✨ In-Season (${seasonLabel})">`;
+          inSeasonList.forEach(c => {
+            html += `<option value="${c}">${c}</option>`;
+          });
+          html += `</optgroup>`;
+        }
+
+        if (outOfSeasonList.length > 0) {
+          html += `<optgroup label="🌙 Out-of-Season">`;
+          outOfSeasonList.forEach(c => {
+            html += `<option value="${c}" style="color: var(--text-dim);">${c}</option>`;
+          });
+          html += `</optgroup>`;
+        }
+
+        constellationSelect.innerHTML = html;
+      } else {
+        let html = '<option value="ALL">All Constellations</option>';
+        allConstellations.forEach(c => {
+          html += `<option value="${c}">${c}</option>`;
+        });
+        constellationSelect.innerHTML = html;
+      }
+
+      // Preserve current selection if valid
+      if ([...constellationSelect.options].some(opt => opt.value === currentSelection)) {
+        constellationSelect.value = currentSelection;
+      } else {
+        constellationSelect.value = "ALL";
+      }
+    }
+
+    // Helper: Compute star dot radius from stellar magnitude
+    function magToRadius(mag) {
+      const r = 7 - (mag * 0.55);
+      return Math.max(2.2, Math.min(8.0, r));
+    }
+
+    // Helper: Render SVG visual star pair preview with informative tooltip
+    function createVisualSVG(star) {
+      const r1 = magToRadius(star.mag1);
+      const r2 = magToRadius(star.mag2);
+
+      const minSep = 1.2;
+      const maxSep = 50.0;
+      const sepRatio = Math.min(1.0, Math.max(0.0, (star.sep - minSep) / (maxSep - minSep)));
+      const distPx = 16 + (sepRatio * 68);
+
+      const cx1 = 30;
+      const cy1 = 20;
+      
+      let cx2 = cx1 + distPx;
+      let cy2 = cy1;
+
+      if (cx2 > 138) {
+        cx2 = 138;
+      }
+
+      const tooltipText = `${star.name} (${star.bayer})\nColors: ${star.colorDesc}\nSeparation: ${star.sep}" | Position Angle: ${star.pa}°`;
+
+      return `
+        <div class="star-preview-box" title="${tooltipText}">
+          <svg class="star-preview-svg" viewBox="0 0 150 40">
+            <defs>
+              <radialGradient id="glow1_${star.id}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="${star.color1}" stop-opacity="1"/>
+                <stop offset="60%" stop-color="${star.color1}" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="${star.color1}" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="glow2_${star.id}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="${star.color2}" stop-opacity="1"/>
+                <stop offset="60%" stop-color="${star.color2}" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="${star.color2}" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <line x1="${cx1}" y1="${cy1}" x2="${cx2}" y2="${cy2}" stroke="rgba(255,255,255,0.12)" stroke-dasharray="2,2" stroke-width="1"/>
+            
+            <circle cx="${cx1}" cy="${cy1}" r="${r1 * 2.2}" fill="url(#glow1_${star.id})"/>
+            <circle cx="${cx1}" cy="${cy1}" r="${r1}" fill="${star.color1}"/>
+
+            <circle cx="${cx2}" cy="${cy2}" r="${r2 * 2.2}" fill="url(#glow2_${star.id})"/>
+            <circle cx="${cx2}" cy="${cy2}" r="${r2}" fill="${star.color2}"/>
+
+            <text x="145" y="34" font-family="'Fira Code', monospace" font-size="9" fill="#94a3b8" text-anchor="end">${star.sep}"</text>
+          </svg>
+        </div>
+      `;
+    }
+
+    // Helper: Season Badge
+    function getSeasonBadge(season) {
+      const seasonIcons = {
+        spring: "🌸 Spring",
+        summer: "☀️ Summer",
+        autumn: "🍂 Autumn",
+        winter: "❄️ Winter"
+      };
+      return `<span class="season-badge season-${season}">${seasonIcons[season] || season}</span>`;
+    }
+
+    // Update Header Sort Arrows
+    function updateSortArrows() {
+      document.querySelectorAll("th[data-sort]").forEach(th => {
+        const key = th.getAttribute("data-sort");
+        const arrow = document.getElementById(`arrow-${key}`);
+        if (key === activeSortKey) {
+          th.classList.add("active-sort");
+          if (arrow) arrow.textContent = activeSortDir === "asc" ? "▲" : "▼";
+        } else {
+          th.classList.remove("active-sort");
+          if (arrow) arrow.textContent = "▲";
+        }
+      });
+    }
+
+    // Reset All Filters, Search, Dropdown, and Sorting
+    function resetAllFilters() {
+      searchInput.value = "";
+      activeFilterChip = "all";
+      activeSortKey = "mag1";
+      activeSortDir = "asc";
+
+      document.querySelectorAll(".chip").forEach(c => {
+        c.classList.toggle("active", c.getAttribute("data-filter") === "all");
+      });
+
+      populateConstellationDropdown(null);
+      constellationSelect.value = "ALL";
+      renderTable();
+    }
+
+    // Render Data Table Rows
+    function renderTable() {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      const selectedConst = constellationSelect.value;
+
+      currentData = DOUBLE_STARS_DATA.filter(star => {
+        const matchesSearch = !searchTerm || 
+          star.name.toLowerCase().includes(searchTerm) ||
+          star.bayer.toLowerCase().includes(searchTerm) ||
+          star.constellation.toLowerCase().includes(searchTerm) ||
+          star.colorDesc.toLowerCase().includes(searchTerm);
+
+        const matchesConst = (selectedConst === "ALL") || (star.constellation === selectedConst);
+
+        let matchesChip = true;
+        const delta = Math.abs(star.mag1 - star.mag2);
+
+        if (activeFilterChip === "showcase") matchesChip = star.showcase;
+        else if (activeFilterChip === "high-contrast") matchesChip = delta >= 2.0 || star.colorDesc.includes("Gold & Sapphire") || star.colorDesc.includes("Amber") || star.colorDesc.includes("Orange");
+        else if (activeFilterChip === "twins") matchesChip = delta <= 0.5;
+        else if (activeFilterChip === "tight") matchesChip = star.sep >= 1.2 && star.sep <= 5.0;
+        else if (activeFilterChip === "wide") matchesChip = star.sep >= 20.0 && star.sep <= 50.0;
+        else if (["spring", "summer", "autumn", "winter"].includes(activeFilterChip)) matchesChip = star.season === activeFilterChip;
+
+        return matchesSearch && matchesConst && matchesChip;
+      });
+
+      const seasonOrder = { spring: 1, summer: 2, autumn: 3, winter: 4 };
+
+      currentData.sort((a, b) => {
+        let res = 0;
+        if (activeSortKey === "sep") {
+          res = a.sep - b.sep;
+        } else if (activeSortKey === "name") {
+          res = a.name.localeCompare(b.name);
+        } else if (activeSortKey === "constellation") {
+          res = a.constellation.localeCompare(b.constellation);
+        } else if (activeSortKey === "season") {
+          res = (seasonOrder[a.season] || 0) - (seasonOrder[b.season] || 0);
+        } else if (activeSortKey === "mag1") {
+          res = a.mag1 - b.mag1;
+        } else if (activeSortKey === "delta") {
+          const deltaA = Math.abs(a.mag1 - a.mag2);
+          const deltaB = Math.abs(b.mag1 - b.mag2);
+          res = deltaA - deltaB;
+        }
+
+        return activeSortDir === "asc" ? res : -res;
+      });
+
+      updateSortArrows();
+
+      resultsText.innerHTML = `Showing <strong>${currentData.length}</strong> of ${DOUBLE_STARS_DATA.length} double stars`;
+
+      if (currentData.length === 0) {
+        tableBody.innerHTML = "";
+        emptyState.style.display = "block";
+        return;
+      }
+
+      emptyState.style.display = "none";
+      let html = "";
+
+      currentData.forEach(star => {
+        const sepBarPercent = Math.min(100, Math.max(4, (star.sep / 50.0) * 100));
+        const deltaValue = Math.abs(star.mag1 - star.mag2).toFixed(1);
+
+        html += `
+          <tr class="main-row" data-id="${star.id}">
+            <td class="visual-cell">
+              ${createVisualSVG(star)}
+            </td>
+            <td>
+              <div class="star-name">
+                ${star.name}
+                ${star.showcase ? '<span title="Showcase Gem">⭐</span>' : ''}
+              </div>
+              <div class="bayer-designation">${star.bayer}</div>
+            </td>
+            <td>
+              <div class="constellation-badge">
+                ${star.constellation} (${star.constAbbr})
+              </div>
+            </td>
+            <td>
+              ${getSeasonBadge(star.season)}
+            </td>
+            <td>
+              <div class="mag-values">${star.mag1.toFixed(1)} / ${star.mag2.toFixed(1)}</div>
+            </td>
+            <td>
+              <span class="delta-mag-text">${deltaValue} mag</span>
+            </td>
+            <td class="separation-cell">
+              <div>${star.sep.toFixed(1)}"</div>
+              <div class="sep-bar-bg" title="${star.sep}&quot; of 50.0&quot; max">
+                <div class="sep-bar-fill" style="width: ${sepBarPercent}%;"></div>
+              </div>
+            </td>
+          </tr>
+          <tr class="details-row" id="details-${star.id}" style="display: none;">
+            <td colspan="7">
+              <div class="details-grid">
+                <div class="details-box">
+                  <div class="details-title">🎨 Color Contrast &amp; Hues</div>
+                  <div>
+                    <span class="color-chip-pill">
+                      <span class="color-chip-dot" style="background-color: ${star.color1}; color: ${star.color1};"></span>
+                      Primary: ${star.color1Name || 'Star A'}
+                    </span>
+                    <span class="color-chip-pill">
+                      <span class="color-chip-dot" style="background-color: ${star.color2}; color: ${star.color2};"></span>
+                      Secondary: ${star.color2Name || 'Star B'}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="details-box">
+                  <div class="details-title">🔭 Eyepiece Observing Notes</div>
+                  <div class="details-text">${star.notes}</div>
+                </div>
+
+                <div class="details-box">
+                  <div class="details-title">📐 Astronomical Data</div>
+                  <div class="key-value-list">
+                    <div class="key-value-item"><span class="key">Position Angle (PA):</span><span class="val">${star.pa}&deg;</span></div>
+                    <div class="key-value-item"><span class="key">Right Ascension:</span><span class="val">${star.ra}</span></div>
+                    <div class="key-value-item"><span class="key">Declination:</span><span class="val">${star.dec}</span></div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tableBody.innerHTML = html;
+
+      document.querySelectorAll(".main-row").forEach(row => {
+        row.addEventListener("click", () => {
+          const starId = row.getAttribute("data-id");
+          const detailsRow = document.getElementById(`details-${starId}`);
+          const isExpanded = detailsRow.style.display !== "none";
+
+          document.querySelectorAll(".details-row").forEach(dr => dr.style.display = "none");
+          document.querySelectorAll(".main-row").forEach(mr => mr.classList.remove("expanded-row"));
+
+          if (!isExpanded) {
+            detailsRow.style.display = "table-row";
+            row.classList.add("expanded-row");
+          }
+        });
+      });
+    }
+
+    // Drawer Controller
+    function openGuideDrawer() {
+      guideBackdrop.classList.add("active");
+      guidePanel.classList.add("active");
+    }
+
+    function closeGuideDrawer() {
+      guideBackdrop.classList.remove("active");
+      guidePanel.classList.remove("active");
+    }
+
+    // Attach Event Listeners
+    function attachEventListeners() {
+      searchInput.addEventListener("input", renderTable);
+      constellationSelect.addEventListener("change", renderTable);
+      resetFiltersBtn.addEventListener("click", resetAllFilters);
+
+      document.querySelectorAll("th[data-sort]").forEach(th => {
+        th.addEventListener("click", () => {
+          const sortKey = th.getAttribute("data-sort");
+          if (activeSortKey === sortKey) {
+            activeSortDir = activeSortDir === "asc" ? "desc" : "asc";
+          } else {
+            activeSortKey = sortKey;
+            activeSortDir = "asc";
+          }
+          renderTable();
+        });
+      });
+
+      document.querySelectorAll(".chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+          activeFilterChip = chip.getAttribute("data-filter");
+          
+          const isSeason = ["spring", "summer", "autumn", "winter"].includes(activeFilterChip);
+          populateConstellationDropdown(isSeason ? activeFilterChip : null);
+          
+          renderTable();
+        });
+      });
+
+      nightVisionToggle.addEventListener("click", () => {
+        isNightVision = !isNightVision;
+        document.body.classList.toggle("night-vision", isNightVision);
+        nightVisionLabel.textContent = isNightVision ? "Normal Vision" : "Red-Light Vision";
+      });
+
+      // Observing Guide Drawer Handlers
+      guideToggleBtn.addEventListener("click", openGuideDrawer);
+      guideCloseBtn.addEventListener("click", closeGuideDrawer);
+      guideBackdrop.addEventListener("click", closeGuideDrawer);
+      
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && guidePanel.classList.contains("active")) {
+          closeGuideDrawer();
+        }
+      });
+    }
+
+    // Initialize on DOM load
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
