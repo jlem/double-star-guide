@@ -1911,12 +1911,15 @@
       // Magnitude-adjusted brightness mapping. Light flux scales with square of aperture (150mm is 6.25x brighter than 60mm).
       // We compress the linear flux logarithmically to map to a [0.15, 1.0] opacity range for the monitor.
       function getOpacity(mag) {
-        // Logarithmic perception of magnitude, flattened slightly for monitor display
-        const monitorBrightness = Math.pow(2.512, -mag * 0.2); 
         // True physical flux scales geometrically with the square of the aperture
-        const apertureScale = Math.pow(aperture / 60, 2); 
-        // Compute final opacity (anchored so Mag 0 at 60mm is reasonably bright)
-        const op = monitorBrightness * apertureScale * 0.7;
+        const baseFlux = Math.pow(2.512, -mag);
+        const apertureFlux = baseFlux * Math.pow(aperture, 2);
+        
+        // Convert to a logarithmic scale, and map to a sensible visual opacity range
+        // This ensures 60mm isn't invisible, and 600mm scales smoothly across the dynamic range
+        const logFlux = Math.log10(apertureFlux);
+        const op = 0.35 + (logFlux * 0.3);
+        
         return Math.max(0.15, Math.min(1.0, op)).toFixed(2);
       }
       const op1 = getOpacity(star.mag1);
