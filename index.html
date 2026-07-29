@@ -2006,6 +2006,22 @@
       } else {
         diffWrapper.style.display = 'none';
       }
+
+      // Pre-compute difficulty for modal preset chips to provide a color-coded preview
+      document.querySelectorAll('.modal-preset-chip').forEach(btn => {
+        const ap = parseInt(btn.dataset.aperture);
+        if (ap) {
+          const btnDiff = computeDifficulty(star, ap);
+          if (btnDiff) {
+            const isActive = btn.classList.contains('active');
+            btn.style.backgroundColor = btnDiff.bg;
+            btn.style.borderColor = btnDiff.color;
+            btn.style.color = isActive ? '#ffffff' : btnDiff.color;
+            btn.style.boxShadow = isActive ? `0 0 12px ${btnDiff.color}` : 'none';
+            btn.style.opacity = isActive ? '1.0' : '0.85';
+          }
+        }
+      });
     }
 
     // Helper: Season Badge
