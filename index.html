@@ -1894,6 +1894,18 @@
       
       const ringWidth = 1.0;
 
+      // Magnitude-adjusted brightness mapping. Light flux scales with square of aperture (150mm is 6.25x brighter than 60mm).
+      // We compress the linear flux logarithmically to map to a [0.15, 1.0] opacity range for the monitor.
+      function getOpacity(mag) {
+        const flux = Math.pow(2.512, -mag) * Math.pow(aperture, 2);
+        const max_flux = 1.0 * Math.pow(150, 2); // Baseline flux: Mag 0 at 150mm
+        const relative_flux = flux / max_flux;
+        const op = 0.333 * Math.log10(relative_flux * 10000);
+        return Math.max(0.15, Math.min(1.0, op)).toFixed(2);
+      }
+      const op1 = getOpacity(star.mag1);
+      const op2 = getOpacity(star.mag2);
+
       return `
         <div class="simulation-box">
           <div class="details-title">🔭 Eyepiece View at ${power}x (${aperture}mm)</div>
@@ -1922,17 +1934,19 @@
               <line x1="10" y1="85" x2="160" y2="85" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
 
               <g filter="url(#mute_${star.id})">
-                <!-- Primary Star 1st Airy Diffraction Ring -->
-                <circle cx="${x1}" cy="${y1}" r="${ringRadius1}" fill="none" stroke="${c1}" stroke-opacity="0.28" stroke-width="${ringWidth}" mask="url(#mask1_${star.id})"/>
-                <!-- Primary Core Glow (simulates overlapping Airy disks) -->
-                <circle cx="${x1}" cy="${y1}" r="${glow1}" fill="${c1}" fill-opacity="0.25" filter="url(#blur_${star.id})"/>
-                <circle cx="${x1}" cy="${y1}" r="${r1}" fill="${c1}"/>
+                <!-- Primary Star -->
+                <g opacity="${op1}">
+                  <circle cx="${x1}" cy="${y1}" r="${ringRadius1}" fill="none" stroke="${c1}" stroke-opacity="0.28" stroke-width="${ringWidth}" mask="url(#mask1_${star.id})"/>
+                  <circle cx="${x1}" cy="${y1}" r="${glow1}" fill="${c1}" fill-opacity="0.25" filter="url(#blur_${star.id})"/>
+                  <circle cx="${x1}" cy="${y1}" r="${r1}" fill="${c1}"/>
+                </g>
 
-                <!-- Secondary Star 1st Airy Diffraction Ring -->
-                <circle cx="${x2}" cy="${y2}" r="${ringRadius2}" fill="none" stroke="${c2}" stroke-opacity="0.28" stroke-width="${ringWidth}" mask="url(#mask2_${star.id})"/>
-                <!-- Secondary Core -->
-                <circle cx="${x2}" cy="${y2}" r="${glow2}" fill="${c2}" fill-opacity="0.15" filter="url(#blur_${star.id})"/>
-                <circle cx="${x2}" cy="${y2}" r="${r2}" fill="${c2}"/>
+                <!-- Secondary Star -->
+                <g opacity="${op2}">
+                  <circle cx="${x2}" cy="${y2}" r="${ringRadius2}" fill="none" stroke="${c2}" stroke-opacity="0.28" stroke-width="${ringWidth}" mask="url(#mask2_${star.id})"/>
+                  <circle cx="${x2}" cy="${y2}" r="${glow2}" fill="${c2}" fill-opacity="0.15" filter="url(#blur_${star.id})"/>
+                  <circle cx="${x2}" cy="${y2}" r="${r2}" fill="${c2}"/>
+                </g>
               </g>
             </svg>
           </div>
