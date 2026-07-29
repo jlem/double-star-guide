@@ -1243,12 +1243,12 @@
   <svg style="width: 0; height: 0; position: absolute;" aria-hidden="true">
     <defs>
       <filter id="sim-glow-blur">
-        <!-- Slightly increased glow blur (0.4) for softer falloff -->
-        <feGaussianBlur stdDeviation="0.4" />
+        <!-- Heavily increased glow blur for softer Airy falloff -->
+        <feGaussianBlur stdDeviation="1.5" />
       </filter>
       <filter id="sim-core-blur">
-        <!-- Increased core blur (0.2) as requested -->
-        <feGaussianBlur stdDeviation="0.2" />
+        <!-- Heavily increased core blur to remove hard edges on the spurious disk -->
+        <feGaussianBlur stdDeviation="0.7" />
       </filter>
     </defs>
   </svg>
