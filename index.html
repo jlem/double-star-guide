@@ -2094,7 +2094,7 @@
       // so star sizes and separation in pixels remain unchanged while FOV circle scales.
       const viewBoxSize = 170 * (wrapperWidth / 400);
 
-      const rawHtml = createEyepieceSimSVG(star, userAperture, null, viewBoxSize);
+      const rawHtml = createEyepieceSimSVG(star, userAperture, 0.125, viewBoxSize);
       
       const svgMatch = rawHtml.match(/<svg[\s\S]*<\/svg>/);
       if (svgMatch && wrapper) {
