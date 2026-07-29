@@ -1121,6 +1121,120 @@
         grid-template-columns: 1fr;
       }
     }
+    
+    /* -------------------------------------
+       Simulation Modal Styles
+    --------------------------------------*/
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .sim-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -45%) scale(0.95);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 500px;
+      z-index: 1001;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+    }
+    .sim-modal.active {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+      pointer-events: auto;
+    }
+    .sim-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .sim-modal-title {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .sim-modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    .sim-modal-close:hover {
+      color: var(--text-main);
+    }
+    .sim-modal-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--bg-body);
+    }
+    .sim-modal-svg-wrapper {
+      width: 100%;
+      max-width: 400px;
+      aspect-ratio: 1;
+      background: #000;
+      border-radius: 50%;
+      box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .sim-modal-svg-wrapper svg {
+      width: 100%;
+      height: 100%;
+    }
+    .sim-modal-stats {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .sim-modal-footer {
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    /* Make simulation boxes in the drawer clickable */
+    .simulation-box {
+      cursor: zoom-in;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .simulation-box:hover {
+      border-color: var(--accent-blue);
+      transform: scale(1.02);
+    }
   </style>
 </head>
 <body>
@@ -1129,6 +1243,44 @@
   <div id="customTooltip" class="custom-tooltip" role="tooltip"></div>
 
   <div class="container">
+    <!-- Simulation Modal -->
+    <div class="modal-backdrop" id="simModalBackdrop"></div>
+    <div class="sim-modal" id="simModal">
+      <div class="sim-modal-header">
+        <h2 class="sim-modal-title" id="simModalTitle">Simulation</h2>
+        <button class="sim-modal-close" id="simModalClose">&times;</button>
+      </div>
+      <div class="sim-modal-body">
+        <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper">
+          <!-- SVG rendered here -->
+        </div>
+        <div class="sim-modal-stats">
+          <div class="readout-item"><span>Power:</span> <strong id="modalPowerVal">—</strong></div>
+          <div class="readout-item"><span>Dawes:</span> <strong id="modalDawesVal">—</strong></div>
+          <div class="readout-item"><span>Rayleigh:</span> <strong id="modalRayleighVal">—</strong></div>
+          <div class="readout-item" id="modalDifficultyWrapper"><span>Difficulty:</span> <strong id="modalDifficultyVal">—</strong></div>
+        </div>
+      </div>
+      <div class="sim-modal-footer">
+        <div class="filter-group">
+          <label class="filter-label" for="modalApertureInput">
+            <span>Simulation Aperture (mm)</span>
+          </label>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <input type="number" id="modalApertureInput" class="input-control" placeholder="e.g. 80" min="30" max="400" style="max-width: 100px;">
+          </div>
+          <div class="preset-row">
+            <button class="preset-chip modal-preset-chip" data-aperture="60">60mm</button>
+            <button class="preset-chip modal-preset-chip" data-aperture="80">80mm</button>
+            <button class="preset-chip modal-preset-chip" data-aperture="100">100mm</button>
+            <button class="preset-chip modal-preset-chip" data-aperture="115">115mm</button>
+            <button class="preset-chip modal-preset-chip" data-aperture="130">130mm</button>
+            <button class="preset-chip modal-preset-chip" data-aperture="150">150mm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Header -->
     <header>
       <div class="brand">
@@ -1425,6 +1577,7 @@
     let isNightVision = false;
     let userAperture = null;
     let expandedStarId = null;
+    let currentModalStarId = null;
 
     // Active Sort State (Default: Magnitude Brightest to Dimmest)
     let activeSortKey = "mag1";
@@ -1569,45 +1722,46 @@
       const deltaM = Math.abs(star.mag1 - star.mag2);
       
       const contrastMultiplier = 1 + (deltaM > 1.5 ? Math.min(2.5, (deltaM - 1.5) * 0.3) : 0);
-      const requiredSep = rayleigh * contrastMultiplier;
+      // Tie the brightness blooming penalty directly to the simulation's radius logic
+      const r_primary = Math.max(1.8, 8.5 - (star.mag1 * 0.85));
+      // Stars brighter than ~mag 5.5 begin to bloom heavily, scaling the required separation
+      const brightnessMultiplier = 1 + Math.max(0, (r_primary - 3.87) * 0.224);
+      // Combine multipliers additively to prevent exponential penalty on extreme edge cases like Antares
+      const combinedMultiplier = 1 + (contrastMultiplier - 1) + (brightnessMultiplier - 1);
+      const requiredSep = rayleigh * combinedMultiplier;
       const ratio = star.sep / requiredSep;
 
       let label, level, color, bg, icon, reason;
 
-      if (ratio < 0.7) {
+      if (ratio < 0.5) {
         label = "Unresolved";
         level = 5;
         color = "#ef4444";
         bg = "rgba(239, 68, 68, 0.15)";
-        icon = "🔴";
         reason = `${star.name}: Unresolved in ${aperture}mm. Appears as a single star.`;
-      } else if (ratio < 0.85) {
+      } else if (ratio < 0.75) {
         label = "Elongated";
         level = 4;
         color = "#f97316";
         bg = "rgba(249, 115, 22, 0.15)";
-        icon = "🟠";
         reason = `${star.name}: Elongated in ${aperture}mm. Appears as an elongated star (oval).`;
       } else if (ratio < 1.0) {
         label = "Notched";
         level = 3;
         color = "#fbbf24";
         bg = "rgba(251, 191, 36, 0.15)";
-        icon = "🟡";
         reason = `${star.name}: Notched in ${aperture}mm. Two overlapping spurious disks and shared diffraction ring.`;
-      } else if (ratio < 1.25) {
+      } else if (ratio < 1.35) {
         label = "Split";
         level = 2;
         color = "#a3e635";
         bg = "rgba(163, 230, 53, 0.15)";
-        icon = "🟢";
         reason = `${star.name}: Split in ${aperture}mm. Split spurious disks with a shared/touching diffraction ring.`;
       } else {
         label = "Separated";
         level = 1;
         color = "#4ade80";
         bg = "rgba(74, 222, 128, 0.15)";
-        icon = "🔵";
         reason = `${star.name}: Separated in ${aperture}mm. Fully separated spurious disks and diffraction rings.`;
       }
 
@@ -1679,10 +1833,10 @@
     }
 
     // Render Eyepiece Simulation SVG Viewport at 2x/mm Aperture Power
-    function createEyepieceSimSVG(star, aperture) {
+    function createEyepieceSimSVG(star, aperture, scaleOverride = null) {
       if (!aperture || aperture <= 0) {
         return `
-          <div class="simulation-box">
+          <div class="simulation-box" style="cursor: default;">
             <div class="details-title">🔭 Eyepiece Simulation (2x/mm)</div>
             <div class="eyepiece-viewport">
               <div style="font-size: 0.8rem; color: var(--text-muted); padding: 1rem;">
@@ -1710,8 +1864,8 @@
       // Compress apparent separation for tight pairs to simulate visual blooming/merging
       const visualSep = sepPixels * Math.min(1.0, Math.pow(sepPixels / 12.5, 0.7));
 
-      // Global scale factor to shrink the visual sizes (user requested 50% scale)
-      const scale = 0.5;
+      // Global scale factor to shrink the visual sizes
+      const scale = scaleOverride !== null ? scaleOverride : 0.25;
       const scaledVisualSep = visualSep * scale;
 
       const cx = 85;
@@ -1737,6 +1891,8 @@
       // Diffraction rings separated by a constant gap from the glow, appropriately scaled
       const ringRadius1 = glow1 + (2.0 * scale);
       const ringRadius2 = glow2 + (2.0 * scale);
+      
+      const ringWidth = 1.0;
 
       return `
         <div class="simulation-box">
@@ -1747,6 +1903,9 @@
                 <filter id="mute_${star.id}">
                   <!-- Mute saturation by 50% for high magnification look -->
                   <feColorMatrix type="saturate" values="0.5" />
+                </filter>
+                <filter id="blur_${star.id}">
+                  <feGaussianBlur stdDeviation="${0.8 * scale}" />
                 </filter>
                 <mask id="mask1_${star.id}">
                   <rect x="0" y="0" width="170" height="170" fill="white" />
@@ -1764,15 +1923,15 @@
 
               <g filter="url(#mute_${star.id})">
                 <!-- Primary Star 1st Airy Diffraction Ring -->
-                <circle cx="${x1}" cy="${y1}" r="${ringRadius1}" fill="none" stroke="${c1}" stroke-opacity="0.38" stroke-width="0.5" mask="url(#mask1_${star.id})"/>
+                <circle cx="${x1}" cy="${y1}" r="${ringRadius1}" fill="none" stroke="${c1}" stroke-opacity="0.28" stroke-width="${ringWidth}" mask="url(#mask1_${star.id})"/>
                 <!-- Primary Core Glow (simulates overlapping Airy disks) -->
-                <circle cx="${x1}" cy="${y1}" r="${glow1}" fill="${c1}" fill-opacity="0.35"/>
+                <circle cx="${x1}" cy="${y1}" r="${glow1}" fill="${c1}" fill-opacity="0.25" filter="url(#blur_${star.id})"/>
                 <circle cx="${x1}" cy="${y1}" r="${r1}" fill="${c1}"/>
 
                 <!-- Secondary Star 1st Airy Diffraction Ring -->
-                <circle cx="${x2}" cy="${y2}" r="${ringRadius2}" fill="none" stroke="${c2}" stroke-opacity="0.38" stroke-width="0.5" mask="url(#mask2_${star.id})"/>
+                <circle cx="${x2}" cy="${y2}" r="${ringRadius2}" fill="none" stroke="${c2}" stroke-opacity="0.28" stroke-width="${ringWidth}" mask="url(#mask2_${star.id})"/>
                 <!-- Secondary Core -->
-                <circle cx="${x2}" cy="${y2}" r="${glow2}" fill="${c2}" fill-opacity="0.25"/>
+                <circle cx="${x2}" cy="${y2}" r="${glow2}" fill="${c2}" fill-opacity="0.15" filter="url(#blur_${star.id})"/>
                 <circle cx="${x2}" cy="${y2}" r="${r2}" fill="${c2}"/>
               </g>
             </svg>
@@ -1780,6 +1939,57 @@
           <div class="sim-mag-label">${power}x Power | Rayleigh: ${rayleigh.toFixed(2)}&quot;</div>
         </div>
       `;
+    }
+
+    // Modal Controller logic
+    function openSimulationModal(starId) {
+      if (!userAperture) return;
+      currentModalStarId = starId;
+      document.getElementById('simModalBackdrop').classList.add('active');
+      document.getElementById('simModal').classList.add('active');
+      const modalApertureInput = document.getElementById('modalApertureInput');
+      modalApertureInput.value = userAperture;
+      renderSimulationModal();
+    }
+
+    function closeSimulationModal() {
+      document.getElementById('simModalBackdrop').classList.remove('active');
+      document.getElementById('simModal').classList.remove('active');
+      currentModalStarId = null;
+    }
+
+    function renderSimulationModal() {
+      if (!currentModalStarId || !userAperture) return;
+      const star = DOUBLE_STARS_DATA.find(s => s.id === currentModalStarId);
+      if (!star) return;
+
+      document.getElementById('simModalTitle').innerText = `${star.name} Simulation`;
+
+      // Render 0.25x scale SVG to match drawer physical star sizes, but allowing massive FOV inside the modal
+      const rawHtml = createEyepieceSimSVG(star, userAperture, 0.25);
+      
+      const svgMatch = rawHtml.match(/<svg[\s\S]*<\/svg>/);
+      if (svgMatch) {
+        document.getElementById('simModalSvgWrapper').innerHTML = svgMatch[0];
+      }
+
+      // Update Modal Stats
+      const dawes = 116 / userAperture;
+      const rayleigh = 138 / userAperture;
+      const power = userAperture * 2;
+      document.getElementById('modalPowerVal').innerText = power + 'x';
+      document.getElementById('modalDawesVal').innerText = dawes.toFixed(2) + '"';
+      document.getElementById('modalRayleighVal').innerText = rayleigh.toFixed(2) + '"';
+
+      const diff = computeDifficulty(star, userAperture);
+      const diffWrapper = document.getElementById('modalDifficultyWrapper');
+      const diffVal = document.getElementById('modalDifficultyVal');
+      if (diff) {
+        diffWrapper.style.display = 'block';
+        diffVal.innerHTML = `<span style="color:${diff.color}">${diff.label}</span>`;
+      } else {
+        diffWrapper.style.display = 'none';
+      }
     }
 
     // Helper: Season Badge
@@ -1961,7 +2171,7 @@
             ${userAperture ? `
               <td>
                 <span class="difficulty-badge" data-tooltip="${diff.reason.replace(/"/g, '&quot;')}" style="color: ${diff.color}; background: ${diff.bg}; border-color: ${diff.color}33;">
-                  <span>${diff.icon}</span> ${diff.label}
+                  ${diff.label}
                 </span>
               </td>
             ` : ''}
@@ -1997,7 +2207,7 @@
                   </div>
                 </div>
 
-                <div class="details-box">
+                <div class="details-box simulation-box" onclick="openSimulationModal('${star.id}')">
                   ${createEyepieceSimSVG(star, userAperture)}
                 </div>
               </div>
@@ -2105,9 +2315,33 @@
       guideCloseBtn.addEventListener("click", closeGuideDrawer);
       guideBackdrop.addEventListener("click", closeGuideDrawer);
       
+      // Simulation Modal Handlers
+      document.getElementById('simModalClose').addEventListener("click", closeSimulationModal);
+      document.getElementById('simModalBackdrop').addEventListener("click", closeSimulationModal);
+      
+      document.getElementById('modalApertureInput').addEventListener("input", (e) => {
+        apertureInput.value = e.target.value;
+        updateTelescopeSetup();
+        renderSimulationModal();
+      });
+
+      document.querySelectorAll(".modal-preset-chip").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const val = btn.getAttribute("data-aperture");
+          document.getElementById('modalApertureInput').value = val;
+          apertureInput.value = val;
+          updateTelescopeSetup();
+          renderSimulationModal();
+        });
+      });
+
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && guidePanel.classList.contains("active")) {
-          closeGuideDrawer();
+        if (e.key === "Escape") {
+          if (document.getElementById('simModal').classList.contains("active")) {
+            closeSimulationModal();
+          } else if (guidePanel.classList.contains("active")) {
+            closeGuideDrawer();
+          }
         }
       });
     }
