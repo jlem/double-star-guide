@@ -1363,6 +1363,7 @@
               <div class="readout-item"><span>AFOV:</span> <strong id="modalAfovVal">—</strong></div>
               <div class="readout-item"><span>Dawes:</span> <strong id="modalDawesVal">—</strong></div>
               <div class="readout-item"><span>Rayleigh:</span> <strong id="modalRayleighVal">—</strong></div>
+              <div class="readout-item"><span>Separation:</span> <strong id="modalSepVal">—</strong></div>
               <div class="readout-item" id="modalDifficultyWrapper"><span>Appearance:</span> <strong id="modalDifficultyVal">—</strong></div>
             </div>
           </div>
@@ -2126,6 +2127,7 @@
       document.getElementById('modalAfovVal').innerText = `~${modalAfovDeg.toFixed(1)}°`;
       document.getElementById('modalDawesVal').innerText = dawes.toFixed(2) + '"';
       document.getElementById('modalRayleighVal').innerText = rayleigh.toFixed(2) + '"';
+      document.getElementById('modalSepVal').innerText = (typeof star.sep === 'number' ? star.sep.toFixed(2) : star.sep) + '"';
 
       const diff = computeDifficulty(star, userAperture);
       const diffWrapper = document.getElementById('modalDifficultyWrapper');
