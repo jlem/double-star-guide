@@ -1242,6 +1242,8 @@
             <button class="preset-chip" data-aperture="80">80mm</button>
             <button class="preset-chip" data-aperture="100">100mm</button>
             <button class="preset-chip" data-aperture="115">115mm</button>
+            <button class="preset-chip" data-aperture="130">130mm</button>
+            <button class="preset-chip" data-aperture="150">150mm</button>
           </div>
         </div>
         <div class="telescope-readout" id="telescopeReadout">
@@ -1421,7 +1423,8 @@
     let currentData = [];
     let activeFilterChip = "all";
     let isNightVision = false;
-    let userAperture = null; // User's entered telescope aperture in mm
+    let userAperture = null;
+    let expandedStarId = null;
 
     // Active Sort State (Default: Magnitude Brightest to Dimmest)
     let activeSortKey = "mag1";
@@ -1924,7 +1927,7 @@
         const diff = computeDifficulty(star, userAperture);
 
         html += `
-          <tr class="main-row" data-id="${star.id}">
+          <tr class="main-row ${star.id === expandedStarId ? 'expanded-row' : ''}" data-id="${star.id}">
             <td class="visual-cell">
               ${createVisualSVG(star)}
             </td>
@@ -1963,7 +1966,7 @@
               </td>
             ` : ''}
           </tr>
-          <tr class="details-row" id="details-${star.id}" style="display: none;">
+          <tr class="details-row" id="details-${star.id}" style="display: ${star.id === expandedStarId ? 'table-row' : 'none'};">
             <td colspan="${userAperture ? 8 : 7}">
               <div class="details-grid">
                 <div class="details-box">
@@ -2030,6 +2033,9 @@
           if (!isExpanded) {
             detailsRow.style.display = "table-row";
             row.classList.add("expanded-row");
+            expandedStarId = starId;
+          } else {
+            expandedStarId = null;
           }
         });
       });
