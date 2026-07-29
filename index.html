@@ -1959,7 +1959,7 @@
       const visualSep = sepPixels * Math.min(1.0, Math.pow(sepPixels / 12.5, 0.7));
 
       // Global scale factor to shrink the visual sizes
-      const scale = scaleOverride !== null ? scaleOverride : 0.25;
+      const scale = scaleOverride !== null ? scaleOverride : 0.125;
       const scaledVisualSep = visualSep * scale;
 
       const vb = viewBoxSize !== null ? viewBoxSize : 170;
@@ -2081,7 +2081,7 @@
       // so star sizes and separation in pixels remain unchanged while FOV circle scales.
       const viewBoxSize = 170 * (wrapperWidth / 400);
 
-      const rawHtml = createEyepieceSimSVG(star, userAperture, 0.25, viewBoxSize);
+      const rawHtml = createEyepieceSimSVG(star, userAperture, 0.125, viewBoxSize);
       
       const svgMatch = rawHtml.match(/<svg[\s\S]*<\/svg>/);
       if (svgMatch && wrapper) {
