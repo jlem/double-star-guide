@@ -1989,6 +1989,11 @@
       
       const ringWidth = 0.8;
 
+      // Link blur stdDeviation proportionally to scale factor (reference: 1.2 and 0.7 at scale 0.25)
+      const glowBlur = (1.2 * (scale / 0.25)).toFixed(2);
+      const coreBlur = (0.7 * (scale / 0.25)).toFixed(2);
+      const filterSuffix = `${star.id}_${Math.round(scale * 1000)}`;
+
       // Magnitude-adjusted brightness mapping. Light flux scales with square of aperture (150mm is 6.25x brighter than 60mm).
       function getOpacity(mag) {
         const baseFlux = Math.pow(2.512, -mag);
@@ -2005,25 +2010,33 @@
           <div class="details-title">🔭 Eyepiece View at ${power}x (${aperture}mm)</div>
           <div class="eyepiece-viewport">
             <svg class="sim-canvas" viewBox="0 0 ${vb} ${vb}" style="filter: saturate(0.5);">
+              <defs>
+                <filter id="sim-glow-blur-${filterSuffix}">
+                  <feGaussianBlur stdDeviation="${glowBlur}" />
+                </filter>
+                <filter id="sim-core-blur-${filterSuffix}">
+                  <feGaussianBlur stdDeviation="${coreBlur}" />
+                </filter>
+              </defs>
 
               <!-- Primary Star Wrapper -->
               <g opacity="${op1}">
                 <!-- 1. Glow (Background, fuzzy) -->
-                <circle cx="${x1}" cy="${y1}" r="${glow1}" fill="${c1}" fill-opacity="0.25" filter="url(#sim-glow-blur)"/>
+                <circle cx="${x1}" cy="${y1}" r="${glow1}" fill="${c1}" fill-opacity="0.25" filter="url(#sim-glow-blur-${filterSuffix})"/>
                 <!-- 2. Diffraction Ring (Middle) -->
                 <circle cx="${x1}" cy="${y1}" r="${ringRadius1}" fill="none" stroke="${c1}" stroke-opacity="0.14" stroke-width="${ringWidth}"/>
                 <!-- 3. Core (Foreground, occludes rings behind it) -->
-                <circle cx="${x1}" cy="${y1}" r="${r1}" fill="${c1}" filter="url(#sim-core-blur)"/>
+                <circle cx="${x1}" cy="${y1}" r="${r1}" fill="${c1}" filter="url(#sim-core-blur-${filterSuffix})"/>
               </g>
 
               <!-- Secondary Star Wrapper -->
               <g opacity="${op2}">
                 <!-- 1. Glow -->
-                <circle cx="${x2}" cy="${y2}" r="${glow2}" fill="${c2}" fill-opacity="0.15" filter="url(#sim-glow-blur)"/>
+                <circle cx="${x2}" cy="${y2}" r="${glow2}" fill="${c2}" fill-opacity="0.15" filter="url(#sim-glow-blur-${filterSuffix})"/>
                 <!-- 2. Diffraction Ring -->
                 <circle cx="${x2}" cy="${y2}" r="${ringRadius2}" fill="none" stroke="${c2}" stroke-opacity="0.14" stroke-width="${ringWidth}"/>
                 <!-- 3. Core -->
-                <circle cx="${x2}" cy="${y2}" r="${r2}" fill="${c2}" filter="url(#sim-core-blur)"/>
+                <circle cx="${x2}" cy="${y2}" r="${r2}" fill="${c2}" filter="url(#sim-core-blur-${filterSuffix})"/>
               </g>
             </svg>
           </div>
