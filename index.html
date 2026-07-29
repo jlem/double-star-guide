@@ -1918,7 +1918,7 @@
         // Convert to a logarithmic scale, and map to a sensible visual opacity range
         // This ensures 60mm isn't invisible, and 600mm scales smoothly across the dynamic range
         const logFlux = Math.log10(apertureFlux);
-        const op = 0.35 + (logFlux * 0.3);
+        const op = 0.40 + (logFlux * 0.45);
         
         return Math.max(0.15, Math.min(1.0, op)).toFixed(2);
       }
