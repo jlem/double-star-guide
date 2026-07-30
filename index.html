@@ -363,8 +363,8 @@
     .quick-filters-box {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
-      gap: 0.25rem;
+      align-items: stretch;
+      gap: 0.45rem;
       padding-right: 1rem;
       border-right: 1px solid var(--border-color);
       flex-shrink: 0;
@@ -377,6 +377,7 @@
       white-space: nowrap;
       text-transform: uppercase;
       letter-spacing: 0.04em;
+      text-align: center;
     }
 
     .chips-container {
@@ -419,10 +420,12 @@
     }
 
     .btn-reset {
-      background: rgba(96, 165, 250, 0.08);
-      border: 1px solid rgba(96, 165, 250, 0.25);
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.3);
       color: #93c5fd;
-      padding: 0.2rem 0.6rem;
+      padding: 0.25rem 0.5rem;
       border-radius: 12px;
       font-size: 0.725rem;
       font-weight: 500;
@@ -431,19 +434,37 @@
       transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.25rem;
+      opacity: 1;
     }
 
-    .btn-reset:hover {
-      background: rgba(96, 165, 250, 0.18);
+    .btn-reset:hover:not(:disabled) {
+      background: rgba(96, 165, 250, 0.22);
       border-color: #60a5fa;
       color: #ffffff;
+    }
+
+    .btn-reset:disabled, .btn-reset.disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+      background: rgba(255, 255, 255, 0.03);
+      border-color: var(--border-color);
+      color: var(--text-dim);
     }
 
     body.night-vision .btn-reset {
       background: rgba(255, 0, 0, 0.12);
       border-color: rgba(255, 0, 0, 0.3);
       color: #ff8888;
+    }
+
+    body.night-vision .btn-reset:disabled, body.night-vision .btn-reset.disabled {
+      opacity: 0.3;
+      background: rgba(255, 0, 0, 0.03);
+      border-color: var(--border-color);
+      color: var(--text-dim);
     }
 
     /* Table Controls & View Options */
@@ -1465,7 +1486,7 @@
         <div class="chips-row">
           <div class="quick-filters-box">
             <span class="chips-title">Quick Filters</span>
-            <button class="btn-reset" id="resetFiltersBtn" title="Reset search, constellation, quick filters, telescope setup, and sorting" style="display: none;">↺ Reset</button>
+            <button class="btn-reset" id="resetFiltersBtn" title="Reset search, constellation, quick filters, telescope setup, and sorting" disabled>↺ Reset</button>
           </div>
           <div class="chips-container">
             <button class="chip active" data-filter="all">All Pairs</button>
@@ -2207,8 +2228,8 @@
       renderTable();
     }
 
-    // Reset Button Visibility Manager
-    function updateResetButtonVisibility() {
+    // Reset Button State Manager (Always visible, disabled when at defaults)
+    function updateResetButtonState() {
       const isSearchChanged = searchInput.value.trim() !== "";
       const isConstChanged = constellationSelect.value !== "ALL";
       const isChipChanged = activeFilterChip !== "all";
@@ -2216,7 +2237,8 @@
       const isApertureChanged = userAperture !== 60;
 
       const isChanged = isSearchChanged || isConstChanged || isChipChanged || isSortChanged || isApertureChanged;
-      resetFiltersBtn.style.display = isChanged ? "inline-flex" : "none";
+      resetFiltersBtn.disabled = !isChanged;
+      resetFiltersBtn.classList.toggle("disabled", !isChanged);
     }
 
     // Reset All Filters, Search, Dropdown, Telescope Setup, and Sorting
@@ -2422,7 +2444,7 @@
         });
       });
 
-      updateResetButtonVisibility();
+      updateResetButtonState();
     }
 
     // Drawer Controller
