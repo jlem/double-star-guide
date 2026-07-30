@@ -250,6 +250,29 @@
       align-items: center;
     }
 
+    .help-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--accent-blue);
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: help;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .help-icon:hover {
+      background: rgba(59, 130, 246, 0.18);
+      border-color: var(--accent-blue);
+      color: #ffffff;
+    }
+
     .input-control, .select-control {
       width: 100%;
       background: var(--bg-input);
@@ -1510,8 +1533,10 @@
         </div>
         <div class="filter-group">
           <label class="filter-label" for="apertureInput">
-            <span>Aperture (mm)</span>
-            <span style="font-weight: 400; font-size: 0.75rem; color: var(--text-dim);">60mm – 200mm</span>
+            <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+              Aperture (mm)
+              <span class="help-icon" id="apertureHelpIcon" title="">?</span>
+            </span>
           </label>
           <input type="number" id="apertureInput" class="input-control" placeholder="e.g. 80" min="30" max="400">
           <div class="preset-row">
@@ -2208,6 +2233,20 @@
       });
     }
 
+    // Update Aperture Help Tooltip Text Dynamically
+    function updateApertureTooltip() {
+      const helpIcon = document.getElementById("apertureHelpIcon");
+      if (!helpIcon) return;
+
+      const val = parseFloat(apertureInput.value);
+      if (val && val > 0) {
+        const mag = Math.round(val * 2);
+        helpIcon.setAttribute("data-tooltip", `Simulation will be at 2x per mm of aperture, which for this ${val}mm aperture will be ${mag}x`);
+      } else {
+        helpIcon.setAttribute("data-tooltip", "Simulation will be at 2x per mm of aperture");
+      }
+    }
+
     // Update Telescope Aperture Setup
     function updateTelescopeSetup() {
       const val = parseFloat(apertureInput.value);
@@ -2225,6 +2264,7 @@
         btn.classList.toggle("active", ap === userAperture);
       });
 
+      updateApertureTooltip();
       renderTable();
     }
 
@@ -2505,6 +2545,19 @@
         nightVisionLabel.textContent = isNightVision ? "Normal Vision" : "Red-Light Vision";
         renderTable();
       });
+
+      // Aperture Help Icon Tooltip Listeners
+      const helpIcon = document.getElementById("apertureHelpIcon");
+      if (helpIcon) {
+        helpIcon.addEventListener("mouseenter", (e) => {
+          const text = helpIcon.getAttribute("data-tooltip");
+          if (text) showCustomTooltip(text, e);
+        });
+        helpIcon.addEventListener("mousemove", (e) => {
+          positionCustomTooltip(e);
+        });
+        helpIcon.addEventListener("mouseleave", hideCustomTooltip);
+      }
 
       // Observing Guide Drawer Handlers
       guideToggleBtn.addEventListener("click", openGuideDrawer);
