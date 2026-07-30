@@ -585,14 +585,25 @@
     .difficulty-badge, .difficulty-pill {
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
-      padding: 0.25rem 0.65rem;
-      border-radius: 20px;
-      font-size: 0.775rem;
+      justify-content: center;
+      padding: 0.15rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.725rem;
       font-weight: 700;
       white-space: nowrap;
       border: 1px solid currentColor;
       cursor: help;
+    }
+
+    .double-stars-table th[data-sort="difficulty"],
+    .double-stars-table th[data-sort="appearance"],
+    .double-stars-table td:nth-child(8),
+    .double-stars-table td:nth-child(9) {
+      width: 100px;
+      max-width: 110px;
+      padding-left: 0.35rem;
+      padding-right: 0.35rem;
+      text-align: center;
     }
 
     /* Custom Floating Tooltip Panel */
