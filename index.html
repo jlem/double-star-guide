@@ -2270,7 +2270,7 @@
       const modalDiffVal = document.getElementById('modalDifficultyVal');
       const modalDiffHelp = document.getElementById('modalDifficultyHelpIcon');
       if (diff) {
-        modalDiffVal.innerHTML = `<span class="difficulty-pill" style="color: ${diff.color}; background: ${diff.bg}; border: 1px solid ${diff.border};">${diff.label}</span>`;
+        modalDiffVal.innerHTML = `<span style="color: ${diff.color}; font-weight: 700;">${diff.label}</span>`;
         if (modalDiffHelp) {
           modalDiffHelp.setAttribute('data-tooltip', diff.reason);
         }
