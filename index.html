@@ -2159,7 +2159,7 @@
       const coreBlur = (0.7 * (scale / 0.25)).toFixed(2);
       const filterSuffix = `${star.id}_${Math.round(scale * 1000)}`;
 
-      // Brightness opacity mapping with higher minimum floor (0.55) so spurious disks remain clearly visible
+      // Brightness opacity mapping with minimum floor (0.40) so spurious disks remain clearly visible
       function getOpacity(mag) {
         const baseFlux = Math.pow(2.512, -mag);
         const apertureFlux = baseFlux * Math.pow(aperture, 2);
