@@ -582,7 +582,7 @@
     }
 
     /* Difficulty Badge Chips in Table */
-    .difficulty-badge {
+    .difficulty-badge, .difficulty-pill {
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
@@ -1419,7 +1419,14 @@
               <div class="readout-item"><span>Dawes:</span> <strong id="modalDawesVal">—</strong></div>
               <div class="readout-item"><span>Rayleigh:</span> <strong id="modalRayleighVal">—</strong></div>
               <div class="readout-item"><span>Separation:</span> <strong id="modalSepVal">—</strong></div>
-              <div class="readout-item" id="modalDifficultyWrapper"><span>Appearance:</span> <strong id="modalDifficultyVal">—</strong></div>
+              <div class="readout-item" id="modalDifficultyWrapper">
+                <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                  Difficulty
+                  <span class="help-icon" id="modalDifficultyHelpIcon" title="">?</span>
+                </span>
+                <strong id="modalDifficultyVal">—</strong>
+              </div>
+              <div class="readout-item" id="modalAppearanceWrapper"><span>Appearance:</span> <strong id="modalAppearanceVal">—</strong></div>
             </div>
           </div>
         </div>
@@ -1577,7 +1584,8 @@
             <th data-sort="mag1" class="active-sort">Magnitudes <span class="sort-arrow" id="arrow-mag1">▲</span></th>
             <th data-sort="delta">&Delta; Mag <span class="sort-arrow" id="arrow-delta">▲</span></th>
             <th data-sort="sep">Separation (") <span class="sort-arrow" id="arrow-sep">▲</span></th>
-            <th data-sort="difficulty" id="thDifficulty" style="display: none;">Appearance <span class="sort-arrow" id="arrow-difficulty">▲</span></th>
+            <th data-sort="difficulty">Difficulty <span class="sort-arrow" id="arrow-difficulty">▲</span></th>
+            <th data-sort="appearance" id="thAppearance" style="display: none;">Appearance <span class="sort-arrow" id="arrow-appearance">▲</span></th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -1884,18 +1892,75 @@
       }
     }
 
-    function computeDifficulty(star, aperture) {
+    // Calculate Estimated Observing Difficulty (Easy, Moderate, Hard)
+    function computeObservingDifficulty(star, aperture) {
+      const ap = aperture || 60;
+      const rayleigh = 138 / ap;
+      const deltaM = Math.abs(star.mag1 - star.mag2);
+      const m1 = star.mag1;
+      const m2 = star.mag2;
+      const sep = star.sep;
+
+      const ratio = sep / rayleigh;
+
+      let score = 0;
+
+      // 1. Separation ratio relative to Rayleigh limit
+      if (ratio < 0.95) score += 4;
+      else if (ratio < 1.5) score += 3;
+      else if (ratio < 3.0) score += 2;
+      else if (ratio < 6.0) score += 1;
+
+      // 2. Magnitude difference (glare / contrast penalty)
+      if (deltaM >= 3.5) score += 3;
+      else if (deltaM >= 2.0) score += 2;
+      else if (deltaM >= 1.0) score += 1;
+
+      // 3. Faint companion magnitude penalty
+      if (m2 >= 9.5) score += 2;
+      else if (m2 >= 8.5) score += 1;
+
+      // 4. Bright primary glare penalty on tight/unequal pairs
+      if (m1 <= 2.5 && (sep < 10.0 || deltaM > 2.0)) score += 1;
+
+      let label, level, color, bg, border, reason;
+
+      if (score <= 2) {
+        label = "Easy";
+        level = 1;
+        color = "#4ade80";
+        bg = "rgba(74, 222, 128, 0.15)";
+        border = "rgba(74, 222, 128, 0.35)";
+        reason = `Easy: Generous separation (${sep}") and modest contrast (Δm=${deltaM.toFixed(1)}) make this accessible in a ${ap}mm scope.`;
+      } else if (score <= 4) {
+        label = "Moderate";
+        level = 2;
+        color = "#fbbf24";
+        bg = "rgba(251, 191, 36, 0.15)";
+        border = "rgba(251, 191, 36, 0.35)";
+        reason = `Moderate: Requires steady seeing and high power due to ${sep < 3.0 ? 'tight separation (' + sep + '")' : 'magnitude contrast (Δm=' + deltaM.toFixed(1) + ')'} in a ${ap}mm scope.`;
+      } else {
+        label = "Hard";
+        level = 3;
+        color = "#ef4444";
+        bg = "rgba(239, 68, 68, 0.15)";
+        border = "rgba(239, 68, 68, 0.35)";
+        reason = `Hard: High difficulty due to ${sep < 2.0 ? 'very tight separation (' + sep + '") near resolution limit' : 'faint companion (m=' + m2 + ') and glare contrast (Δm=' + deltaM.toFixed(1) + ')'} in a ${ap}mm scope.`;
+      }
+
+      return { label, level, color, bg, border, reason, score };
+    }
+
+    // Compute Eyepiece Visual Appearance (Unresolved, Elongated, Notched, Split, Separated)
+    function computeAppearance(star, aperture) {
       if (!aperture || aperture <= 0) return null;
 
       const rayleigh = 138 / aperture;
       const deltaM = Math.abs(star.mag1 - star.mag2);
       
       const contrastMultiplier = 1 + (deltaM > 1.5 ? Math.min(2.5, (deltaM - 1.5) * 0.3) : 0);
-      // Tie the brightness blooming penalty directly to the simulation's radius logic
       const r_primary = Math.max(1.8, 8.5 - (star.mag1 * 0.85));
-      // Stars brighter than ~mag 5.5 begin to bloom heavily, scaling the required separation
       const brightnessMultiplier = 1 + Math.max(0, (r_primary - 3.87) * 0.224);
-      // Combine multipliers additively to prevent exponential penalty on extreme edge cases like Antares
       const combinedMultiplier = 1 + (contrastMultiplier - 1) + (brightnessMultiplier - 1);
       const requiredSep = rayleigh * combinedMultiplier;
       const ratio = star.sep / requiredSep;
@@ -1935,7 +2000,7 @@
       }
 
       const rayleighMultiple = (star.sep / rayleigh).toFixed(1);
-      reason += ` Separation (${star.sep}&quot;) is ${rayleighMultiple}x Rayleigh Limit (${rayleigh.toFixed(2)}&quot;)`;
+      reason += ` Separation (${star.sep}") is ${rayleighMultiple}x Rayleigh Limit (${rayleigh.toFixed(2)}")`;
       if (deltaM > 1.0) {
         reason += ` with high magnitude difference (Δm ${deltaM.toFixed(1)}).`;
       } else {
@@ -2201,21 +2266,27 @@
       document.getElementById('modalRayleighVal').innerText = rayleigh.toFixed(2) + '"';
       document.getElementById('modalSepVal').innerText = (typeof star.sep === 'number' ? star.sep.toFixed(2) : star.sep) + '"';
 
-      const diff = computeDifficulty(star, userAperture);
-      const diffWrapper = document.getElementById('modalDifficultyWrapper');
-      const diffVal = document.getElementById('modalDifficultyVal');
+      const diff = computeObservingDifficulty(star, userAperture);
+      const modalDiffVal = document.getElementById('modalDifficultyVal');
+      const modalDiffHelp = document.getElementById('modalDifficultyHelpIcon');
       if (diff) {
-        diffWrapper.style.display = 'flex';
-        diffVal.innerHTML = `<span style="color:${diff.color}">${diff.label}</span>`;
-      } else {
-        diffWrapper.style.display = 'none';
+        modalDiffVal.innerHTML = `<span class="difficulty-pill" style="color: ${diff.color}; background: ${diff.bg}; border: 1px solid ${diff.border};">${diff.label}</span>`;
+        if (modalDiffHelp) {
+          modalDiffHelp.setAttribute('data-tooltip', diff.reason);
+        }
+      }
+
+      const app = computeAppearance(star, userAperture);
+      const modalAppVal = document.getElementById('modalAppearanceVal');
+      if (app) {
+        modalAppVal.innerHTML = `<span style="color: ${app.color}; font-weight: 700;">${app.label}</span>`;
       }
 
       // Pre-compute difficulty for modal preset chips to provide a color-coded preview
       document.querySelectorAll('.modal-preset-chip').forEach(btn => {
         const ap = parseInt(btn.dataset.aperture);
         if (ap) {
-          const btnDiff = computeDifficulty(star, ap);
+          const btnDiff = computeObservingDifficulty(star, ap);
           if (btnDiff) {
             const isActive = btn.classList.contains('active');
             btn.style.backgroundColor = btnDiff.bg;
@@ -2270,13 +2341,14 @@
 
     // Update Telescope Aperture Setup
     function updateTelescopeSetup() {
+      const thAppearance = document.getElementById("thAppearance");
       const val = parseFloat(apertureInput.value);
       if (val && val > 0) {
         userAperture = val;
-        thDifficulty.style.display = "table-cell";
+        if (thAppearance) thAppearance.style.display = "table-cell";
       } else {
         userAperture = null;
-        thDifficulty.style.display = "none";
+        if (thAppearance) thAppearance.style.display = "none";
       }
 
       // Highlight active preset chip in telescope setup panel
@@ -2370,9 +2442,13 @@
           const deltaB = Math.abs(b.mag1 - b.mag2);
           res = deltaA - deltaB;
         } else if (activeSortKey === "difficulty") {
-          const diffA = computeDifficulty(a, userAperture);
-          const diffB = computeDifficulty(b, userAperture);
-          res = (diffA ? diffA.level : 0) - (diffB ? diffB.level : 0);
+          const diffA = computeObservingDifficulty(a, userAperture);
+          const diffB = computeObservingDifficulty(b, userAperture);
+          res = diffA.score - diffB.score;
+        } else if (activeSortKey === "appearance") {
+          const appA = computeAppearance(a, userAperture);
+          const appB = computeAppearance(b, userAperture);
+          res = (appA ? appA.level : 0) - (appB ? appB.level : 0);
         }
 
         return activeSortDir === "asc" ? res : -res;
@@ -2394,7 +2470,16 @@
       currentData.forEach(star => {
         const sepBarPercent = Math.min(100, Math.max(4, (star.sep / 50.0) * 100));
         const deltaValue = Math.abs(star.mag1 - star.mag2).toFixed(1);
-        const diff = computeDifficulty(star, userAperture);
+        const diff = computeObservingDifficulty(star, userAperture);
+        const app = userAperture ? computeAppearance(star, userAperture) : null;
+
+        const appCellHtml = userAperture && app ? `
+          <td>
+            <span class="difficulty-badge" data-tooltip="${app.reason.replace(/"/g, '&quot;')}" style="color: ${app.color}; background: ${app.bg}; border-color: ${app.color}33;">
+              ${app.label}
+            </span>
+          </td>
+        ` : `<td style="display: none;"></td>`;
 
         html += `
           <tr class="main-row ${star.id === expandedStarId ? 'expanded-row' : ''}" data-id="${star.id}">
@@ -2428,16 +2513,15 @@
                 <div class="sep-bar-fill" style="width: ${sepBarPercent}%;"></div>
               </div>
             </td>
-            ${userAperture ? `
-              <td>
-                <span class="difficulty-badge" data-tooltip="${diff.reason.replace(/"/g, '&quot;')}" style="color: ${diff.color}; background: ${diff.bg}; border-color: ${diff.color}33;">
-                  ${diff.label}
-                </span>
-              </td>
-            ` : ''}
+            <td>
+              <span class="difficulty-pill" data-tooltip="${diff.reason.replace(/"/g, '&quot;')}" style="color: ${diff.color}; background: ${diff.bg}; border-color: ${diff.border};">
+                ${diff.label}
+              </span>
+            </td>
+            ${appCellHtml}
           </tr>
           <tr class="details-row" id="details-${star.id}" style="display: ${star.id === expandedStarId ? 'table-row' : 'none'};">
-            <td colspan="${userAperture ? 8 : 7}">
+            <td colspan="${userAperture ? 9 : 8}">
               <div class="details-grid">
                 <div class="details-box">
                   <div class="details-title">🎨 Color Contrast &amp; Hues</div>
@@ -2583,6 +2667,19 @@
           positionCustomTooltip(e);
         });
         helpIcon.addEventListener("mouseleave", hideCustomTooltip);
+      }
+
+      // Modal Difficulty Help Icon Tooltip Listeners
+      const modalDiffHelp = document.getElementById("modalDifficultyHelpIcon");
+      if (modalDiffHelp) {
+        modalDiffHelp.addEventListener("mouseenter", (e) => {
+          const text = modalDiffHelp.getAttribute("data-tooltip");
+          if (text) showCustomTooltip(text, e);
+        });
+        modalDiffHelp.addEventListener("mousemove", (e) => {
+          positionCustomTooltip(e);
+        });
+        modalDiffHelp.addEventListener("mouseleave", hideCustomTooltip);
       }
 
       // Observing Guide Drawer Handlers
