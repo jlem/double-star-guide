@@ -2141,24 +2141,31 @@
       const glow1 = r1 * 1.35;
       const glow2 = r2 * 1.35;
       
-      // Diffraction rings separated by a distinct gap from the glow, appropriately scaled
-      const ringRadius1 = glow1 + (5.5 * scale);
-      const ringRadius2 = glow2 + (5.5 * scale);
+      // Diffraction rings: scale ring radius offset, width, and opacity proportionally for fainter stars
+      const ringScale1 = Math.max(0.45, 1 - (star.mag1 - 2.0) * 0.08);
+      const ringScale2 = Math.max(0.40, 1 - (star.mag2 - 2.0) * 0.08);
+
+      const ringRadius1 = glow1 + (5.5 * scale * ringScale1);
+      const ringRadius2 = glow2 + (5.5 * scale * ringScale2);
       
-      const ringWidth = 0.8;
+      const ringWidth1 = (Math.max(0.4, 0.8 - Math.max(0, star.mag1 - 2.0) * 0.05)).toFixed(2);
+      const ringWidth2 = (Math.max(0.4, 0.8 - Math.max(0, star.mag2 - 2.0) * 0.05)).toFixed(2);
+
+      const ringOpacity1 = (Math.max(0.04, 0.14 - Math.max(0, star.mag1 - 2.0) * 0.012)).toFixed(2);
+      const ringOpacity2 = (Math.max(0.04, 0.14 - Math.max(0, star.mag2 - 2.0) * 0.012)).toFixed(2);
 
       // Link blur stdDeviation proportionally to scale factor (reference: 1.2 and 0.7 at scale 0.25)
       const glowBlur = (1.2 * (scale / 0.25)).toFixed(2);
       const coreBlur = (0.7 * (scale / 0.25)).toFixed(2);
       const filterSuffix = `${star.id}_${Math.round(scale * 1000)}`;
 
-      // Magnitude-adjusted brightness mapping. Light flux scales with square of aperture (150mm is 6.25x brighter than 60mm).
+      // Brightness opacity mapping with higher minimum floor (0.55) so spurious disks remain clearly visible
       function getOpacity(mag) {
         const baseFlux = Math.pow(2.512, -mag);
         const apertureFlux = baseFlux * Math.pow(aperture, 2);
         const logFlux = Math.log10(apertureFlux);
-        const op = 0.40 + (logFlux * 0.45);
-        return Math.max(0.15, Math.min(1.0, op)).toFixed(2);
+        const op = 0.65 + (logFlux * 0.35);
+        return Math.max(0.55, Math.min(1.0, op)).toFixed(2);
       }
       const op1 = getOpacity(star.mag1);
       const op2 = getOpacity(star.mag2);
@@ -2190,19 +2197,19 @@
                 <!-- 1. Glow (Background, fuzzy) -->
                 <circle cx="${x1}" cy="${y1}" r="${glow1}" fill="${c1}" fill-opacity="0.25" filter="url(#sim-glow-blur-${filterSuffix})"/>
                 <!-- 2. Diffraction Ring (Middle) -->
-                <circle cx="${x1}" cy="${y1}" r="${ringRadius1}" fill="none" stroke="${c1}" stroke-opacity="0.14" stroke-width="${ringWidth}"/>
-                <!-- 3. Core (Foreground, occludes rings behind it) -->
-                <circle cx="${x1}" cy="${y1}" r="${r1}" fill="${c1}" filter="url(#sim-core-blur-${filterSuffix})"/>
+                <circle cx="${x1}" cy="${y1}" r="${ringRadius1}" fill="none" stroke="${c1}" stroke-opacity="${ringOpacity1}" stroke-width="${ringWidth1}"/>
+                <!-- 3. Core (Foreground, 100% crisp spurious disk) -->
+                <circle cx="${x1}" cy="${y1}" r="${r1}" fill="${c1}" fill-opacity="0.95" filter="url(#sim-core-blur-${filterSuffix})"/>
               </g>
 
               <!-- Secondary Star Wrapper -->
               <g opacity="${op2}">
                 <!-- 1. Glow -->
-                <circle cx="${x2}" cy="${y2}" r="${glow2}" fill="${c2}" fill-opacity="0.15" filter="url(#sim-glow-blur-${filterSuffix})"/>
-                <!-- 2. Diffraction Ring -->
-                <circle cx="${x2}" cy="${y2}" r="${ringRadius2}" fill="none" stroke="${c2}" stroke-opacity="0.14" stroke-width="${ringWidth}"/>
-                <!-- 3. Core -->
-                <circle cx="${x2}" cy="${y2}" r="${r2}" fill="${c2}" filter="url(#sim-core-blur-${filterSuffix})"/>
+                <circle cx="${x2}" cy="${y2}" r="${glow2}" fill="${c2}" fill-opacity="0.18" filter="url(#sim-glow-blur-${filterSuffix})"/>
+                <!-- 2. Diffraction Ring (Narrower & proportional for fainter stars) -->
+                <circle cx="${x2}" cy="${y2}" r="${ringRadius2}" fill="none" stroke="${c2}" stroke-opacity="${ringOpacity2}" stroke-width="${ringWidth2}"/>
+                <!-- 3. Core (Foreground, 100% crisp spurious disk) -->
+                <circle cx="${x2}" cy="${y2}" r="${r2}" fill="${c2}" fill-opacity="0.95" filter="url(#sim-core-blur-${filterSuffix})"/>
               </g>
             </svg>
           </div>
