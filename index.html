@@ -344,43 +344,47 @@
       color: var(--text-main);
     }
 
-    .telescope-readout {
-      margin-top: 0.85rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-      font-size: 0.8rem;
-    }
-
-    .readout-item {
-      display: flex;
-      justify-content: space-between;
-      color: var(--text-muted);
-    }
-
-    .readout-item strong {
-      color: var(--accent-cyan);
-      font-family: var(--font-mono);
+    .preset-chip.active {
+      background: rgba(59, 130, 246, 0.18);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
     }
 
     /* Chips Filter Bar (Wrapping enabled) */
     .chips-row {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      flex-direction: row;
       align-items: center;
+      gap: 1rem;
       padding-top: 0.85rem;
       border-top: 1px solid var(--border-color);
     }
 
+    .quick-filters-box {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+      padding-right: 1rem;
+      border-right: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
     .chips-title {
-      font-size: 0.8rem;
-      font-weight: 600;
+      font-size: 0.775rem;
+      font-weight: 700;
       color: var(--text-dim);
-      margin-right: 0.5rem;
       white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+      flex: 1;
     }
 
     .chip {
@@ -415,32 +419,31 @@
     }
 
     .btn-reset {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #f87171;
-      padding: 0.35rem 0.85rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
+      background: rgba(96, 165, 250, 0.08);
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      color: #93c5fd;
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.725rem;
+      font-weight: 500;
       cursor: pointer;
-      margin-left: auto;
       white-space: nowrap;
       transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.25rem;
     }
 
     .btn-reset:hover {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: #ef4444;
+      background: rgba(96, 165, 250, 0.18);
+      border-color: #60a5fa;
       color: #ffffff;
     }
 
     body.night-vision .btn-reset {
-      background: rgba(255, 0, 0, 0.15);
-      border-color: rgba(255, 0, 0, 0.4);
-      color: #ff3333;
+      background: rgba(255, 0, 0, 0.12);
+      border-color: rgba(255, 0, 0, 0.3);
+      color: #ff8888;
     }
 
     /* Table Controls & View Options */
@@ -1460,18 +1463,22 @@
 
         <!-- Quick Filter Chips -->
         <div class="chips-row">
-          <span class="chips-title">Quick Filters:</span>
-          <button class="chip active" data-filter="all">All Pairs</button>
-          <button class="chip" data-filter="showcase">⭐ Showcase Gems</button>
-          <button class="chip" data-filter="high-contrast">🎨 High Color Contrast</button>
-          <button class="chip" data-filter="twins">👯 Equal Twins (&Delta;m &le; 0.5)</button>
-          <button class="chip" data-filter="tight">🔍 Tight (1.2" - 5.0")</button>
-          <button class="chip" data-filter="wide">🔭 Wide (20.0" - 50.0")</button>
-          <button class="chip" data-filter="spring">🌸 Spring</button>
-          <button class="chip" data-filter="summer">☀️ Summer</button>
-          <button class="chip" data-filter="autumn">🍂 Autumn</button>
-          <button class="chip" data-filter="winter">❄️ Winter</button>
-          <button class="btn-reset" id="resetFiltersBtn" title="Reset search, constellation dropdown, quick filters, telescope setup, and sort order">↺ Reset</button>
+          <div class="quick-filters-box">
+            <span class="chips-title">Quick Filters</span>
+            <button class="btn-reset" id="resetFiltersBtn" title="Reset search, constellation, quick filters, telescope setup, and sorting" style="display: none;">↺ Reset</button>
+          </div>
+          <div class="chips-container">
+            <button class="chip active" data-filter="all">All Pairs</button>
+            <button class="chip" data-filter="showcase">⭐ Showcase Gems</button>
+            <button class="chip" data-filter="high-contrast">🎨 High Color Contrast</button>
+            <button class="chip" data-filter="twins">👯 Equal Twins (&Delta;m &le; 0.5)</button>
+            <button class="chip" data-filter="tight">🔍 Tight (1.2" - 5.0")</button>
+            <button class="chip" data-filter="wide">🔭 Wide (20.0" - 50.0")</button>
+            <button class="chip" data-filter="spring">🌸 Spring</button>
+            <button class="chip" data-filter="summer">☀️ Summer</button>
+            <button class="chip" data-filter="autumn">🍂 Autumn</button>
+            <button class="chip" data-filter="winter">❄️ Winter</button>
+          </div>
         </div>
       </div>
 
@@ -1494,11 +1501,6 @@
             <button class="preset-chip" data-aperture="130">130mm</button>
             <button class="preset-chip" data-aperture="150">150mm</button>
           </div>
-        </div>
-        <div class="telescope-readout" id="telescopeReadout">
-          <div class="readout-item"><span>Dawes Limit:</span> <strong id="dawesVal">—</strong></div>
-          <div class="readout-item"><span>Rayleigh Limit:</span> <strong id="rayleighVal">—</strong></div>
-          <div class="readout-item"><span>2x/mm Eyepiece Power:</span> <strong id="powerVal">—</strong></div>
         </div>
       </div>
     </div>
@@ -1758,7 +1760,10 @@
       currentData = [...DOUBLE_STARS_DATA];
       populateConstellationDropdown();
       attachEventListeners();
-      renderTable();
+
+      // Default to 60mm aperture on page load
+      apertureInput.value = "60";
+      updateTelescopeSetup();
     }
 
     // Dynamic Constellation Dropdown Populator
@@ -2182,34 +2187,42 @@
       });
     }
 
-    // Update Telescope Aperture Setup Readout
+    // Update Telescope Aperture Setup
     function updateTelescopeSetup() {
       const val = parseFloat(apertureInput.value);
       if (val && val > 0) {
         userAperture = val;
-        const dawes = (116 / val).toFixed(2);
-        const rayleigh = (138 / val).toFixed(2);
-        const maxPower = Math.round(val * 2);
-
-        dawesVal.textContent = `${dawes}"`;
-        rayleighVal.textContent = `${rayleigh}"`;
-        powerVal.textContent = `${maxPower}x`;
         thDifficulty.style.display = "table-cell";
       } else {
         userAperture = null;
-        dawesVal.textContent = "—";
-        rayleighVal.textContent = "—";
-        powerVal.textContent = "—";
         thDifficulty.style.display = "none";
       }
+
+      // Highlight active preset chip in telescope setup panel
+      document.querySelectorAll(".telescope-panel .preset-chip").forEach(btn => {
+        const ap = parseFloat(btn.getAttribute("data-aperture"));
+        btn.classList.toggle("active", ap === userAperture);
+      });
+
       renderTable();
+    }
+
+    // Reset Button Visibility Manager
+    function updateResetButtonVisibility() {
+      const isSearchChanged = searchInput.value.trim() !== "";
+      const isConstChanged = constellationSelect.value !== "ALL";
+      const isChipChanged = activeFilterChip !== "all";
+      const isSortChanged = activeSortKey !== "mag1" || activeSortDir !== "asc";
+      const isApertureChanged = userAperture !== 60;
+
+      const isChanged = isSearchChanged || isConstChanged || isChipChanged || isSortChanged || isApertureChanged;
+      resetFiltersBtn.style.display = isChanged ? "inline-flex" : "none";
     }
 
     // Reset All Filters, Search, Dropdown, Telescope Setup, and Sorting
     function resetAllFilters() {
       searchInput.value = "";
-      apertureInput.value = "";
-      userAperture = null;
+      apertureInput.value = "60";
       activeFilterChip = "all";
       activeSortKey = "mag1";
       activeSortDir = "asc";
@@ -2218,14 +2231,9 @@
         c.classList.toggle("active", c.getAttribute("data-filter") === "all");
       });
 
-      thDifficulty.style.display = "none";
-      dawesVal.textContent = "—";
-      rayleighVal.textContent = "—";
-      powerVal.textContent = "—";
-
       populateConstellationDropdown(null);
       constellationSelect.value = "ALL";
-      renderTable();
+      updateTelescopeSetup();
     }
 
     // Render Data Table Rows
@@ -2413,6 +2421,8 @@
           }
         });
       });
+
+      updateResetButtonVisibility();
     }
 
     // Drawer Controller
