@@ -1908,7 +1908,7 @@
       }
     }
 
-    // Calculate Estimated Observing Difficulty (Easy, Moderate, Hard)
+    // Calculate Estimated Observing Difficulty (Weighted: 70% Separation, 15% Delta Mag, 10% Component Mags)
     function computeObservingDifficulty(star, aperture) {
       const ap = aperture || 60;
       const rayleigh = 138 / ap;
@@ -1919,52 +1919,54 @@
 
       const ratio = sep / rayleigh;
 
-      let score = 0;
+      // 1. Angular Separation (70% weight) - Scale 0 to 4
+      let sepScore = 0;
+      if (ratio < 0.85) sepScore = 4.0;
+      else if (ratio < 1.25) sepScore = 3.0;
+      else if (ratio < 2.0) sepScore = 2.0;
+      else if (ratio < 3.0) sepScore = 1.0;
+      else sepScore = 0.0;
 
-      // 1. Separation ratio relative to Rayleigh limit
-      if (ratio < 0.95) score += 4;
-      else if (ratio < 1.5) score += 3;
-      else if (ratio < 3.0) score += 2;
-      else if (ratio < 6.0) score += 1;
+      // 2. Magnitude Delta (15% weight) - Scale 0 to 3
+      let deltaScore = 0;
+      if (deltaM >= 4.5) deltaScore = 3.0;
+      else if (deltaM >= 3.0) deltaScore = 2.0;
+      else if (deltaM >= 1.5) deltaScore = 1.0;
 
-      // 2. Magnitude difference (glare / contrast penalty)
-      if (deltaM >= 3.5) score += 3;
-      else if (deltaM >= 2.0) score += 2;
-      else if (deltaM >= 1.0) score += 1;
+      // 3. Component Magnitudes (10% weight) - Scale 0 to 2
+      let magScore = 0;
+      if (m1 <= 2.0 && sep < 12.0) magScore += 1.0; // Primary glare
+      if (m2 >= 9.5) magScore += 1.0;             // Faint companion
 
-      // 3. Faint companion magnitude penalty
-      if (m2 >= 9.5) score += 2;
-      else if (m2 >= 8.5) score += 1;
-
-      // 4. Bright primary glare penalty on tight/unequal pairs
-      if (m1 <= 2.5 && (sep < 10.0 || deltaM > 2.0)) score += 1;
+      // Weighted Total Score
+      const totalScore = (0.70 * sepScore) + (0.15 * deltaScore) + (0.10 * magScore);
 
       let label, level, color, bg, border, reason;
 
-      if (score <= 2) {
+      if (totalScore < 1.1) {
         label = "Easy";
         level = 1;
         color = "#4ade80";
         bg = "rgba(74, 222, 128, 0.15)";
         border = "rgba(74, 222, 128, 0.35)";
-        reason = `Easy: Generous separation (${sep}") and modest contrast (Δm=${deltaM.toFixed(1)}) make this accessible in a ${ap}mm scope.`;
-      } else if (score <= 4) {
+        reason = `Easy: Generous separation (${sep}") makes this accessible in a ${ap}mm scope.`;
+      } else if (totalScore < 2.1) {
         label = "Moderate";
         level = 2;
         color = "#fbbf24";
         bg = "rgba(251, 191, 36, 0.15)";
         border = "rgba(251, 191, 36, 0.35)";
-        reason = `Moderate: Requires steady seeing and high power due to ${sep < 3.0 ? 'tight separation (' + sep + '")' : 'magnitude contrast (Δm=' + deltaM.toFixed(1) + ')'} in a ${ap}mm scope.`;
+        reason = `Moderate: ${sep < 3.0 ? 'Tight separation (' + sep + '")' : 'Magnitude contrast (Δm=' + deltaM.toFixed(1) + ')'} requires steady seeing in a ${ap}mm scope.`;
       } else {
         label = "Hard";
         level = 3;
         color = "#ef4444";
         bg = "rgba(239, 68, 68, 0.15)";
         border = "rgba(239, 68, 68, 0.35)";
-        reason = `Hard: High difficulty due to ${sep < 2.0 ? 'very tight separation (' + sep + '") near resolution limit' : 'faint companion (m=' + m2 + ') and glare contrast (Δm=' + deltaM.toFixed(1) + ')'} in a ${ap}mm scope.`;
+        reason = `Hard: High difficulty due to ${sep < 2.0 ? 'very tight separation (' + sep + '")' : 'high magnitude contrast (Δm=' + deltaM.toFixed(1) + ')'} in a ${ap}mm scope.`;
       }
 
-      return { label, level, color, bg, border, reason, score };
+      return { label, level, color, bg, border, reason, score: totalScore };
     }
 
     // Compute Eyepiece Visual Appearance (Unresolved, Elongated, Notched, Split, Separated)
