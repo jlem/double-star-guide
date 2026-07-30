@@ -1521,6 +1521,7 @@
           </div>
           <div class="chips-container">
             <button class="chip active" data-filter="all">All Pairs</button>
+            <button class="chip" data-filter="aperture-appropriate">🔭 Aperture Appropriate</button>
             <button class="chip" data-filter="showcase">⭐ Showcase Gems</button>
             <button class="chip" data-filter="high-contrast">🎨 High Color Contrast</button>
             <button class="chip" data-filter="twins">👯 Equal Twins (&Delta;m &le; 0.5)</button>
@@ -2335,7 +2336,12 @@
         let matchesChip = true;
         const delta = Math.abs(star.mag1 - star.mag2);
 
-        if (activeFilterChip === "showcase") matchesChip = star.showcase;
+        if (activeFilterChip === "aperture-appropriate") {
+          const ap = userAperture || 60;
+          const reqMinSep = (120 + 45 * Math.max(0, delta - 0.5)) / ap;
+          matchesChip = star.sep >= reqMinSep;
+        }
+        else if (activeFilterChip === "showcase") matchesChip = star.showcase;
         else if (activeFilterChip === "high-contrast") matchesChip = delta >= 2.0 || star.colorDesc.includes("Gold & Sapphire") || star.colorDesc.includes("Amber") || star.colorDesc.includes("Orange");
         else if (activeFilterChip === "twins") matchesChip = delta <= 0.5;
         else if (activeFilterChip === "tight") matchesChip = star.sep >= 1.2 && star.sep <= 5.0;
