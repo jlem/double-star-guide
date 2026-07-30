@@ -2338,7 +2338,7 @@
 
         if (activeFilterChip === "aperture-appropriate") {
           const ap = userAperture || 60;
-          const reqMinSep = (120 + 45 * Math.max(0, delta - 0.5)) / ap;
+          const reqMinSep = (114 + 24 * Math.max(0, delta - 0.5)) / ap;
           matchesChip = star.sep >= reqMinSep;
         }
         else if (activeFilterChip === "showcase") matchesChip = star.showcase;
