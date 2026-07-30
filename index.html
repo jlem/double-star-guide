@@ -2165,7 +2165,7 @@
         const apertureFlux = baseFlux * Math.pow(aperture, 2);
         const logFlux = Math.log10(apertureFlux);
         const op = 0.65 + (logFlux * 0.35);
-        return Math.max(0.55, Math.min(1.0, op)).toFixed(2);
+        return Math.max(0.4, Math.min(1.0, op)).toFixed(2);
       }
       const op1 = getOpacity(star.mag1);
       const op2 = getOpacity(star.mag2);
