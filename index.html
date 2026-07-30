@@ -568,16 +568,16 @@
       vertical-align: middle;
     }
 
-    tbody tr {
+    .double-stars-table tbody tr.main-row {
       transition: background-color 0.15s ease;
       cursor: pointer;
     }
 
-    tbody tr:hover {
+    .double-stars-table tbody tr.main-row:hover {
       background-color: var(--bg-card-hover);
     }
 
-    tbody tr.expanded-row {
+    .double-stars-table tbody tr.expanded-row {
       background-color: rgba(59, 130, 246, 0.04);
     }
 
@@ -1108,6 +1108,10 @@
       text-transform: none;
       font-family: var(--font-heading);
       font-size: 0.9rem;
+    }
+
+    table.aperture-table tr, table.aperture-table td, table.aperture-table th {
+      cursor: default;
     }
 
     table.aperture-table td {
