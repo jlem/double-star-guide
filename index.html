@@ -2722,15 +2722,9 @@
           const intensityFactor = (seeingArcsec / 1.6);
           const numSpeckles = Math.min(128, Math.max(2, Math.round(1 + Math.pow(ratio, 1.35) * 1.8 * intensityFactor)));
           const speckleSpread = 0.35 * ratio * rayleighPx;
-          
-          // Turbulence Perceptual Brightness Preservation:
-          // 1. Core floor: Maintains 18% central core anchor so large apertures don't completely dissolve.
-          // 2. Dynamic subWeight exponent: 0.82 for clean/sharp small aperture speckles, scaling down to 0.57 for large apertures to maximize glow & brightness.
-          // 3. Logarithmic turbulence gain: Scales overall weight with (D/r0) ratio to offset spatial dispersion dimming.
-          const turbulenceGain = 1.0 + 0.25 * Math.log10(1.0 + ratio);
-          const speckleExp = 0.82 - 0.25 * Math.min(1.0, Math.max(0, ratio - 0.85) / 4.5);
-          const mainWeight = Math.max(0.18, 1.2 - 0.20 * ratio) * turbulenceGain;
-          const subWeight = ((1.05 * (1.0 - Math.min(0.82, mainWeight))) / Math.pow(numSpeckles - 1, speckleExp)) * turbulenceGain;
+          const mainWeight = Math.max(0.04, 1.2 - 0.20 * ratio);
+          // Balanced speckle brightness weighting (midpoint between linear dimming and high gain)
+          const subWeight = (1.05 * (1.0 - mainWeight)) / Math.pow(numSpeckles - 1, 0.82);
 
           // Fast pseudo-random hash generator for 100% chaotic non-spiral boiling motion
           function hash(k, s) {
