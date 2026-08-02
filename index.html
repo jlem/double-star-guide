@@ -1322,7 +1322,6 @@
       box-sizing: border-box;
     }
     .sim-modal-svg-wrapper {
-      height: 100%;
       max-width: 100%;
       max-height: 100%;
       aspect-ratio: 1 / 1;
@@ -1335,6 +1334,8 @@
       justify-content: center;
       box-sizing: border-box;
       cursor: ns-resize;
+      margin: auto;
+      flex-shrink: 1;
     }
     .sim-modal-svg-wrapper svg {
       width: 100%;
@@ -1344,6 +1345,7 @@
     .sim-modal-svg-wrapper canvas {
       width: 100%;
       height: 100%;
+      object-fit: contain;
       display: block;
     }
     .sim-zoom-controls {
@@ -1516,12 +1518,16 @@
               </label>
               <input type="number" id="modalApertureInput" class="input-control" placeholder="e.g. 80" min="30" max="400" style="width: 100%; margin-bottom: 0.5rem;">
               <div class="sim-modal-preset-grid">
+                <button class="preset-chip modal-preset-chip" data-aperture="50">50mm</button>
                 <button class="preset-chip modal-preset-chip" data-aperture="60">60mm</button>
+                <button class="preset-chip modal-preset-chip" data-aperture="70">70mm</button>
                 <button class="preset-chip modal-preset-chip" data-aperture="80">80mm</button>
+                <button class="preset-chip modal-preset-chip" data-aperture="90">90mm</button>
                 <button class="preset-chip modal-preset-chip" data-aperture="100">100mm</button>
                 <button class="preset-chip modal-preset-chip" data-aperture="115">115mm</button>
                 <button class="preset-chip modal-preset-chip" data-aperture="130">130mm</button>
                 <button class="preset-chip modal-preset-chip" data-aperture="150">150mm</button>
+                <button class="preset-chip modal-preset-chip" data-aperture="200">200mm</button>
               </div>
             </div>
 
@@ -1696,12 +1702,16 @@
           </label>
           <input type="number" id="apertureInput" class="input-control" placeholder="e.g. 80" min="30" max="400">
           <div class="preset-row">
+            <button class="preset-chip" data-aperture="50">50mm</button>
             <button class="preset-chip" data-aperture="60">60mm</button>
+            <button class="preset-chip" data-aperture="70">70mm</button>
             <button class="preset-chip" data-aperture="80">80mm</button>
+            <button class="preset-chip" data-aperture="90">90mm</button>
             <button class="preset-chip" data-aperture="100">100mm</button>
             <button class="preset-chip" data-aperture="115">115mm</button>
             <button class="preset-chip" data-aperture="130">130mm</button>
             <button class="preset-chip" data-aperture="150">150mm</button>
+            <button class="preset-chip" data-aperture="200">200mm</button>
           </div>
         </div>
       </div>
@@ -2439,12 +2449,16 @@
     }
 
     // Render physics-based Airy PSF on a canvas element inside the given wrapper
-    function renderAiryCanvas(wrapper, star, aperture, magFactor, isInteractiveZooming = false) {
-      const wrapperWidth = wrapper ? (wrapper.clientWidth || wrapper.getBoundingClientRect().width || 400) : 400;
+    function renderAiryCanvas(wrapper, star, aperture, magPower = 200, isInteractiveZooming = false) {
+      const rect = wrapper ? wrapper.getBoundingClientRect() : { width: 400, height: 400 };
+      const wrapperWidth = rect.width || wrapper.clientWidth || 400;
+      const wrapperHeight = rect.height || wrapper.clientHeight || wrapperWidth;
+      
+      // Enforce strict 1:1 square aspect ratio based on smallest bounding dimension
+      const displaySize = Math.max(100, Math.round(Math.min(wrapperWidth, wrapperHeight)));
       
       // High-DPI Resolution Scaling (2x Device Pixel Ratio for Retina/Crisp rendering)
       const dpr = Math.max(2, window.devicePixelRatio || 2);
-      const displaySize = Math.round(wrapperWidth);
       const renderSize = Math.round(displaySize * dpr);
 
       let canvas = wrapper.querySelector('canvas');
@@ -2454,11 +2468,12 @@
       wrapper.innerHTML = '';
       wrapper.appendChild(canvas);
 
-      // Set internal render resolution (high-DPI) and CSS display size
+      // Set internal render resolution (high-DPI) and CSS display size (1:1 square)
       canvas.width = renderSize;
       canvas.height = renderSize;
       canvas.style.width = '100%';
       canvas.style.height = '100%';
+      canvas.style.objectFit = 'contain';
 
       const ctx = canvas.getContext('2d');
       const imageData = ctx.createImageData(renderSize, renderSize);
@@ -2473,10 +2488,12 @@
       const lookupFn = isObstructed ? airyObstructedLookup : airyLookup;
       const hasSpiderVanes = (currentScopeType === 'newtonian');
 
-      // Rayleigh distance in canvas pixels (derived from the SVG viewBox/scale coordinate system)
+      // Absolute Optical Power (Magnification M in X): Baseline 200x
+      // Holding separation constant at a given magnification across apertures while Airy disks shrink as aperture increases
       const viewBoxSize = 170 * (wrapperWidth / 400);
-      const scaleUsed = 0.125 * (magFactor / 2.0);
-      const rayleighPx = renderSize * 12.5 * scaleUsed / viewBoxSize;
+      const scaleUsed = 0.125 * (magPower / 200.0);
+      const arcsecPx = (renderSize * 12.5 * scaleUsed) / viewBoxSize;
+      const rayleighPx = rayleigh * arcsecPx;
 
       // Airy u-parameter scale: first zero at u = 1.22π ≈ 3.8317 corresponds to 1 Rayleigh
       const airyScale = 3.8317 / rayleighPx;
@@ -2485,7 +2502,7 @@
       const cx = renderSize / 2;
       const cy = renderSize / 2;
       const angleRad = (star.pa - 90) * (Math.PI / 180);
-      const sepCanvasPx = (star.sep / rayleigh) * rayleighPx;
+      const sepCanvasPx = star.sep * arcsecPx;
       const halfSep = sepCanvasPx / 2;
 
       const sx1 = cx - halfSep * Math.cos(angleRad);
@@ -2510,10 +2527,10 @@
       const rgb2 = hexToRgb(c2);
 
       // Smooth, natural logarithmic tone curve for Airy PSF rendering
-      // Maps peak core to 100%, 1st ring to ~18.1%, 2nd ring to ~5.6%, 3rd ring to ~2.3% with continuous Airy profile
+      // Maps peak core to 100%, 1st ring to ~15.0%, 2nd ring to ~4.2%, 3rd ring to ~1.7% with continuous Airy profile
       function logarithmicToneMap(val) {
         if (val <= 0.0008) return 0.0;
-        const k = 65.0;
+        const k = 44.0;
         const compressed = Math.log(1.0 + k * val) / Math.log(1.0 + k);
         return Math.min(1.0, Math.max(0.0, compressed));
       }
@@ -2758,12 +2775,12 @@
 
     // Modal Controller logic
     let modalResizeObserver = null;
-    let modalMagFactor = 2.0;
+    let currentModalPower = 200.0; // Absolute optical power (magnification M in X): 200x default
 
     function openSimulationModal(starId) {
       if (!userAperture) return;
       currentModalStarId = starId;
-      modalMagFactor = 2.0; // Baseline magnification factor: 2x per mm aperture
+      currentModalPower = 200.0; // Reset to default 200x magnification
       document.getElementById('simModalBackdrop').classList.add('active');
       document.getElementById('simModal').classList.add('active');
       const modalApertureInput = document.getElementById('modalApertureInput');
@@ -2820,28 +2837,30 @@
 
       const wrapper = document.getElementById('simModalSvgWrapper');
       const wrapperWidth = wrapper ? (wrapper.clientWidth || wrapper.getBoundingClientRect().width || 400) : 400;
-      // Reference standard: 170 viewBox units at 400px container width.
-      // Magnification zoom scales scaleUsed linearly with (modalMagFactor / 2.0).
+      // Absolute Optical Power (Magnification M in X): 200x baseline
       const viewBoxSize = 170 * (wrapperWidth / 400);
-      const scaleUsed = 0.125 * (modalMagFactor / 2.0);
+      const scaleUsed = 0.125 * (currentModalPower / 200.0);
 
       // Render physics-based Airy PSF on canvas (replaces SVG for the modal)
       if (wrapper) {
-        renderAiryCanvas(wrapper, star, userAperture, modalMagFactor, isZooming);
+        renderAiryCanvas(wrapper, star, userAperture, currentModalPower, isZooming);
       }
 
       // Update Modal Stats (Scotopic Rayleigh limit 127.3/D arcsec)
       const dawes = 116 / userAperture;
       const rayleigh = 127.3 / userAperture;
-      const power = userAperture * modalMagFactor;
+      const power = currentModalPower;
+      const xPerMm = (power / userAperture).toFixed(1);
 
-      const modalTfovSec = (viewBoxSize * rayleigh) / (12.5 * scaleUsed);
+      // Mathematically exact Field of View spanned across the circular viewport edge
+      // TFOV = viewBoxSize / (12.5 * scaleUsed); AFOV = TFOV * Power (constant across apertures & zoom levels)
+      const modalTfovSec = viewBoxSize / (12.5 * scaleUsed);
       const modalTfovMin = modalTfovSec / 60;
-      const modalAfovDeg = (modalTfovMin * power) / 60;
+      const modalTfovDeg = modalTfovSec / 3600;
+      const modalAfovDeg = modalTfovDeg * power;
       const modalTfovStr = modalTfovMin >= 1.0 ? `${modalTfovMin.toFixed(1)}'` : `${Math.round(modalTfovSec)}"`;
 
-      const magFactorStr = (modalMagFactor).toFixed(1);
-      document.getElementById('modalPowerVal').innerText = `${Math.round(power)}x (${magFactorStr}x/mm)`;
+      document.getElementById('modalPowerVal').innerText = `${Math.round(power)}x (${xPerMm}x/mm)`;
       document.getElementById('modalTfovVal').innerText = modalTfovStr;
       document.getElementById('modalAfovVal').innerText = `~${modalAfovDeg.toFixed(1)}°`;
       document.getElementById('modalDawesVal').innerText = dawes.toFixed(2) + '"';
@@ -2849,14 +2868,15 @@
       document.getElementById('modalSepVal').innerText = (typeof star.sep === 'number' ? star.sep.toFixed(2) : star.sep) + '"';
 
       // Update Reset Zoom button visibility & Zoom badge
-      const isDeviated = Math.abs(modalMagFactor - 2.0) > 0.02;
+      const isDeviated = Math.abs(currentModalPower - 200.0) > 1.0;
       const resetBtn = document.getElementById('simZoomResetBtn');
       const zoomBadge = document.getElementById('simZoomBadge');
       if (resetBtn) {
         resetBtn.style.display = isDeviated ? 'inline-flex' : 'none';
+        resetBtn.setAttribute('title', 'Reset magnification to default 200x');
       }
       if (zoomBadge) {
-        zoomBadge.innerText = `${magFactorStr}x/mm`;
+        zoomBadge.innerText = `${Math.round(power)}x (${xPerMm}x/mm)`;
         zoomBadge.style.color = isDeviated ? '#38bdf8' : '#94a3b8';
       }
 
@@ -2906,16 +2926,16 @@
       });
     }
 
-    // Smooth 60fps scroll-wheel zoom handler (1x to 10x per mm aperture)
+    // Smooth 60fps scroll-wheel zoom handler (50x to 2000x total magnification power)
     function handleModalWheel(e) {
       if (!currentModalStarId || !userAperture) return;
       e.preventDefault();
       
-      let newFactor = modalMagFactor * Math.pow(1.0012, -e.deltaY);
-      newFactor = Math.max(1.0, Math.min(10.0, newFactor));
+      let newPower = currentModalPower * Math.pow(1.0012, -e.deltaY);
+      newPower = Math.max(50.0, Math.min(2000.0, newPower));
       
-      if (Math.abs(newFactor - modalMagFactor) > 0.0001) {
-        modalMagFactor = newFactor;
+      if (Math.abs(newPower - currentModalPower) > 0.05) {
+        currentModalPower = newPower;
 
         isInteractiveZooming = true;
         if (zoomDebounceTimer) clearTimeout(zoomDebounceTimer);
@@ -3243,18 +3263,40 @@
       guidePanel.classList.remove("active");
     }
 
+    let apertureDebounceTimer = null;
+
+    function handleDebouncedApertureInput(val, syncToModal) {
+      if (apertureDebounceTimer) clearTimeout(apertureDebounceTimer);
+      apertureDebounceTimer = setTimeout(() => {
+        if (syncToModal) {
+          document.getElementById('modalApertureInput').value = val;
+        } else {
+          apertureInput.value = val;
+        }
+        updateTelescopeSetup();
+        if (currentModalStarId) {
+          renderSimulationModal();
+        }
+      }, 250);
+    }
+
     // Attach Event Listeners
     function attachEventListeners() {
       searchInput.addEventListener("input", renderTable);
       constellationSelect.addEventListener("change", renderTable);
       resetFiltersBtn.addEventListener("click", resetAllFilters);
-      apertureInput.addEventListener("input", updateTelescopeSetup);
+      apertureInput.addEventListener("input", (e) => {
+        handleDebouncedApertureInput(e.target.value, true);
+      });
 
       document.querySelectorAll(".preset-chip").forEach(btn => {
         btn.addEventListener("click", () => {
+          if (apertureDebounceTimer) clearTimeout(apertureDebounceTimer);
           const val = btn.getAttribute("data-aperture");
           apertureInput.value = val;
+          document.getElementById('modalApertureInput').value = val;
           updateTelescopeSetup();
+          if (currentModalStarId) renderSimulationModal();
         });
       });
 
@@ -3338,7 +3380,7 @@
       const resetBtn = document.getElementById('simZoomResetBtn');
       if (resetBtn) {
         resetBtn.addEventListener('click', () => {
-          modalMagFactor = 2.0;
+          currentModalPower = 200.0;
           renderSimulationModal();
         });
       }
@@ -3371,9 +3413,7 @@
       }
 
       document.getElementById('modalApertureInput').addEventListener("input", (e) => {
-        apertureInput.value = e.target.value;
-        updateTelescopeSetup();
-        renderSimulationModal();
+        handleDebouncedApertureInput(e.target.value, false);
       });
 
       document.querySelectorAll(".modal-preset-chip").forEach(btn => {
