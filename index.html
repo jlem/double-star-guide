@@ -1214,8 +1214,10 @@
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 16px;
-      width: min(96vw, 1400px);
-      height: min(96vh, 1100px);
+      width: calc(100vw - 2rem);
+      max-width: 1750px;
+      height: calc(100vh - 2rem);
+      max-height: 960px;
       z-index: 1001;
       display: none;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
@@ -1229,15 +1231,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem 1.5rem;
+      padding: 0.85rem 1.5rem;
       border-bottom: 1px solid var(--border-color);
       flex-shrink: 0;
-    }
-    .sim-modal-title {
-      font-family: var(--font-heading);
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text-main);
+      background: var(--bg-card);
     }
     .sim-modal-close {
       background: none;
@@ -1252,24 +1249,32 @@
       color: var(--text-main);
     }
     .sim-modal-body {
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: row;
+      padding: 1.25rem;
+      display: grid;
+      grid-template-columns: 560px 1fr 290px;
       gap: 1.5rem;
+      align-items: stretch;
       background: var(--bg-body);
       flex: 1;
       min-height: 0;
       overflow: hidden;
     }
-    .sim-modal-sidebar {
-      width: 250px;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
+    .sim-modal-left-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: stretch;
+      min-width: 0;
       overflow-y: auto;
     }
-    .sim-sidebar-section {
+    .sim-modal-right-column {
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow-y: auto;
+    }
+    .sim-panel {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 12px;
@@ -1277,6 +1282,16 @@
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    .sim-panel-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 0.15rem;
     }
     .sim-sidebar-section-title {
       font-size: 0.8rem;
@@ -1504,14 +1519,20 @@
     <div class="modal-backdrop" id="simModalBackdrop"></div>
     <div class="sim-modal" id="simModal">
       <div class="sim-modal-header">
-        <h2 class="sim-modal-title" id="simModalTitle">Simulation</h2>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Target Star:</span>
+          <select id="simModalStarSelect" class="sim-star-dropdown" style="background: var(--bg-card); color: var(--text-main); font-family: var(--font-heading); font-size: 1.1rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; max-width: 340px; outline: none;">
+            <!-- Populate options dynamically -->
+          </select>
+        </div>
         <button class="sim-modal-close" id="simModalClose">&times;</button>
       </div>
       <div class="sim-modal-body">
-        <!-- Left Sidebar: Aperture Controls & View Readouts -->
-        <div class="sim-modal-sidebar">
-          <div class="sim-sidebar-section">
-            <div class="sim-sidebar-section-title">Aperture Control</div>
+        <!-- LEFT COLUMN: Side-by-Side Equal Height Panels (Aperture Control & Aberrations) -->
+        <div class="sim-modal-left-column">
+          <!-- PANEL 1: Aperture & Optical Design -->
+          <div class="sim-panel">
+            <div class="sim-panel-title">🔭 Aperture & Design</div>
             <div class="filter-group">
               <label class="filter-label" for="modalApertureInput" style="margin-bottom: 0.4rem;">
                 <span>Aperture (mm)</span>
@@ -1531,27 +1552,68 @@
               </div>
             </div>
 
-            <!-- Optical Design Selector in Modal Sidebar -->
+            <!-- Optical Design Selector -->
             <div class="filter-group" style="margin-top: 0.65rem;">
               <label class="filter-label">Optical Design</label>
               <div class="scope-type-toggle" id="modalScopeTypeToggle">
-                <button class="scope-type-btn active" data-scope="refractor" title="Unobstructed Refractor Pupil (Classic Airy diffraction pattern)">Refractor (Unobstructed)</button>
-                <button class="scope-type-btn" data-scope="sct" title="Schmidt/Maksutov-Cassegrain Pupil (35% secondary mirror central obstruction, no spider vanes)">SCT / MCT (35% Obstruction)</button>
-                <button class="scope-type-btn" data-scope="newtonian" title="Newtonian Reflector Pupil (20% secondary mirror central obstruction + 4 thin spider diffraction vanes)">Newtonian (20% Obs + 4 Vanes)</button>
+                <button class="scope-type-btn active" data-scope="refractor" title="Unobstructed Refractor Pupil">Refractor (Unobstructed)</button>
+                <button class="scope-type-btn" data-scope="sct" title="Schmidt/Maksutov-Cassegrain Pupil (35% secondary mirror central obstruction)">SCT / MCT (35% Obs)</button>
+                <button class="scope-type-btn" data-scope="newtonian" title="Newtonian Reflector Pupil (20% secondary mirror central obstruction + 4 thin spider vanes)">Newtonian (20% Obs + Vanes)</button>
               </div>
-            </div>
-
-            <!-- Aberrations Section in Modal Sidebar -->
-            <div class="filter-group" style="margin-top: 0.65rem;">
-              <label class="filter-label">Aberrations</label>
-              <button class="scope-type-btn" id="modalSphericalToggle" data-spherical="false" title="Toggle 0.3 waves of primary spherical aberration (W040 = 0.3λ, Strehl ratio drops from 1.0 to ~0.72)">
-                0.3 λ Spherical Aberration: OFF
-              </button>
             </div>
           </div>
 
-          <div class="sim-sidebar-section">
-            <div class="sim-sidebar-section-title">View Readouts</div>
+          <!-- PANEL 2: Aberrations & Atmosphere -->
+          <div class="sim-panel">
+            <div class="sim-panel-title">🌀 Aberrations</div>
+            <div class="filter-group">
+              <button class="scope-type-btn" id="modalSphericalToggle" data-spherical="false" title="Toggle 0.3 waves of primary spherical aberration">
+                0.3 λ Spherical Aberration: OFF
+              </button>
+              <button class="scope-type-btn" id="modalTurbulenceToggle" data-turbulence="false" style="margin-top: 0.4rem;" title="Simulate dynamic Kolmogorov atmospheric turbulence">
+                Atmospheric Turbulence: OFF
+              </button>
+              
+              <div id="modalTurbulenceControlsGroup" style="margin-top: 0.5rem; display: none; flex-direction: column; gap: 0.4rem; background: var(--bg-main); padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.725rem; color: var(--text-muted);">
+                  <span>Turbulence Speed:</span>
+                  <strong id="modalTurbulenceSpeedVal" style="color: var(--text-main); font-family: var(--font-mono);">10.0x</strong>
+                </div>
+                <input type="range" id="modalTurbulenceSpeedSlider" min="0.2" max="20.0" step="0.2" value="10.0" style="width: 100%; cursor: pointer;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.725rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  <span>Large cell intensity:</span>
+                  <strong id="modalTurbulenceMacroVal" style="color: var(--text-main); font-family: var(--font-mono);">30%</strong>
+                </div>
+                <input type="range" id="modalTurbulenceMacroSlider" min="0" max="200" step="10" value="30" style="width: 100%; cursor: pointer;">
+
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.725rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  <span>Small cell intensity:</span>
+                  <strong id="modalTurbulenceR0Val" style="color: var(--text-main); font-family: var(--font-mono);">3.0" seeing</strong>
+                </div>
+                <input type="range" id="modalTurbulenceR0Slider" min="0.8" max="10.0" step="0.2" value="3.0" style="width: 100%; cursor: pointer;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER AREA: Simulation Viewport (FOV Canvas) -->
+        <div class="sim-modal-main" id="simModalMain">
+          <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper" title="Use scroll wheel to zoom (50x to 2000x magnification)">
+            <!-- Canvas rendered here -->
+          </div>
+          <div class="sim-zoom-controls" id="simZoomControls">
+            <span class="sim-zoom-badge" id="simZoomBadge">200x</span>
+            <button class="sim-zoom-reset-btn" id="simZoomResetBtn" style="display: none;" title="Reset magnification to default 200x">
+              ↺ Reset Zoom
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: View Readouts & Metrics Panel (To the right of FOV) -->
+        <div class="sim-modal-right-column">
+          <div class="sim-panel">
+            <div class="sim-panel-title">📊 View Readouts</div>
             <div class="sim-modal-stats">
               <div class="readout-item"><span>Power:</span> <strong id="modalPowerVal">—</strong></div>
               <div class="readout-item"><span>TFOV:</span> <strong id="modalTfovVal">—</strong></div>
@@ -1568,19 +1630,6 @@
               </div>
               <div class="readout-item" id="modalAppearanceWrapper"><span>Appearance:</span> <strong id="modalAppearanceVal">—</strong></div>
             </div>
-          </div>
-        </div>
-
-        <!-- Right Area: Simulation Viewport (FOV) -->
-        <div class="sim-modal-main" id="simModalMain">
-          <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper" title="Use scroll wheel to zoom (1x to 10x per mm aperture)">
-            <!-- SVG rendered here -->
-          </div>
-          <div class="sim-zoom-controls" id="simZoomControls">
-            <span class="sim-zoom-badge" id="simZoomBadge">2.0x/mm</span>
-            <button class="sim-zoom-reset-btn" id="simZoomResetBtn" style="display: none;" title="Reset zoom to default 2x/mm">
-              ↺ Reset Zoom
-            </button>
           </div>
         </div>
       </div>
@@ -2526,6 +2575,71 @@
       const rgb1 = hexToRgb(c1);
       const rgb2 = hexToRgb(c2);
 
+      // Kolmogorov Atmospheric Turbulence (Seeing disk = turbulenceSeeingArcsec arcsec, r0 = 127.3 / seeing)
+      // Small apertures (D <= r0): Intact Airy pattern with smooth tip/tilt image dancing
+      // Large apertures (D > r0): Airy disk fragments into up to 128 boiling speckle clusters, destroying diffraction rings
+      let turbulenceSpeckles = [{ dx: 0, dy: 0, weight: 1.0 }];
+      if (isTurbulenceActive) {
+        const seeingArcsec = Math.max(0.8, Math.min(10.0, turbulenceSeeingArcsec));
+        const r0 = 127.3 / seeingArcsec; // Fried parameter in mm
+        const ratio = aperture / r0;
+        const now = (performance.now() - turbulenceStartTime) * 0.001 * turbulenceSpeedMultiplier; // seconds
+
+        // Tip/tilt macro image motion jitter (arcseconds) scaled by user turbulenceMacroMultiplier
+        const jitterMag = 0.35 * Math.min(2.5, Math.pow(ratio, 0.45)) * rayleigh * turbulenceMacroMultiplier;
+        const tiltX = jitterMag * (Math.sin(1.7 * now) * 0.6 + Math.cos(2.9 * now + 1.2) * 0.4);
+        const tiltY = jitterMag * (Math.cos(1.9 * now + 0.4) * 0.6 + Math.sin(2.3 * now + 2.1) * 0.4);
+
+        const tiltPxX = tiltX * arcsecPx;
+        const tiltPxY = tiltY * arcsecPx;
+
+        if (ratio <= 0.85) {
+          // Small aperture relative to r0: Intact Airy pattern with smooth dancing
+          turbulenceSpeckles = [{ dx: tiltPxX, dy: tiltPxY, weight: 1.0 }];
+        } else {
+          // Large aperture (80mm - 500mm): Organic chaotic speckle breakup scaling up to 128 distinct speckle seeds
+          const intensityFactor = (seeingArcsec / 1.6);
+          const numSpeckles = Math.min(128, Math.max(2, Math.round(1 + Math.pow(ratio, 1.35) * 1.8 * intensityFactor)));
+          const speckleSpread = 0.35 * ratio * rayleighPx;
+          const mainWeight = Math.max(0.04, 1.2 - 0.20 * ratio);
+          // Balanced speckle brightness weighting (midpoint between linear dimming and high gain)
+          const subWeight = (1.05 * (1.0 - mainWeight)) / Math.pow(numSpeckles - 1, 0.82);
+
+          // Fast pseudo-random hash generator for 100% chaotic non-spiral boiling motion
+          function hash(k, s) {
+            const h = Math.sin(k * 12.9898 + s * 78.233) * 43758.5453;
+            return h - Math.floor(h);
+          }
+
+          turbulenceSpeckles = [{ dx: tiltPxX, dy: tiltPxY, weight: mainWeight }];
+          for (let k = 1; k < numSpeckles; k++) {
+            const rSeed = Math.sqrt(hash(k, 1.0)); // Uniform circular area sampling
+            const maxR = speckleSpread * rSeed;
+
+            const w1 = 1.3 + hash(k, 2.0) * 2.7;
+            const w2 = 1.1 + hash(k, 3.0) * 3.1;
+            const w3 = 1.4 + hash(k, 4.0) * 2.9;
+            const w4 = 1.2 + hash(k, 5.0) * 3.3;
+
+            const p1 = hash(k, 6.0) * 6.283185;
+            const p2 = hash(k, 7.0) * 6.283185;
+            const p3 = hash(k, 8.0) * 6.283185;
+            const p4 = hash(k, 9.0) * 6.283185;
+
+            let sdx = maxR * (0.65 * Math.sin(w1 * now + p1) + 0.35 * Math.cos(w2 * now + p2));
+            let sdy = maxR * (0.65 * Math.cos(w3 * now + p3) + 0.35 * Math.sin(w4 * now + p4));
+
+            const dist = Math.sqrt(sdx * sdx + sdy * sdy);
+            if (dist > speckleSpread) {
+              sdx = (sdx / dist) * speckleSpread;
+              sdy = (sdy / dist) * speckleSpread;
+            }
+
+            turbulenceSpeckles.push({ dx: tiltPxX + sdx, dy: tiltPxY + sdy, weight: subWeight });
+          }
+        }
+      }
+
       // Smooth, natural logarithmic tone curve for Airy PSF rendering
       // Maps peak core to 100%, 1st ring to ~15.0%, 2nd ring to ~4.2%, 3rd ring to ~1.7% with continuous Airy profile
       function logarithmicToneMap(val) {
@@ -2541,15 +2655,25 @@
       const maxR = AIRY_LUT_MAX_U / airyScale;
       const maxR2 = maxR * maxR;
 
+      // Expand bounding box if turbulence speckles wander
+      let maxSpeckleRadius = 0;
+      if (isTurbulenceActive) {
+        for (let k = 0; k < turbulenceSpeckles.length; k++) {
+          const sR = Math.sqrt(turbulenceSpeckles[k].dx * turbulenceSpeckles[k].dx + turbulenceSpeckles[k].dy * turbulenceSpeckles[k].dy);
+          if (sR > maxSpeckleRadius) maxSpeckleRadius = sR;
+        }
+      }
+
       // PERFORMANCE OPTIMIZATION 1: Tight Bounding Box Pixel Culling
-      const minX = Math.max(0, Math.floor(Math.min(sx1, sx2) - maxR));
-      const maxX = Math.min(renderSize, Math.ceil(Math.max(sx1, sx2) + maxR));
-      const minY = Math.max(0, Math.floor(Math.min(sy1, sy2) - maxR));
-      const maxY = Math.min(renderSize, Math.ceil(Math.max(sy1, sy2) + maxR));
+      const minX = Math.max(0, Math.floor(Math.min(sx1, sx2) - maxR - maxSpeckleRadius));
+      const maxX = Math.min(renderSize, Math.ceil(Math.max(sx1, sx2) + maxR + maxSpeckleRadius));
+      const minY = Math.max(0, Math.floor(Math.min(sy1, sy2) - maxR - maxSpeckleRadius));
+      const maxY = Math.min(renderSize, Math.ceil(Math.max(sy1, sy2) + maxR + maxSpeckleRadius));
 
       // PERFORMANCE OPTIMIZATION 2: Adaptive Sub-pixel Anti-Aliasing (SSAA)
-      // 1 sample during active 60fps wheel scrolling, 4 samples (2x2 SSAA) for high-precision static view
-      const subpixelOffsets = isInteractiveZooming ? [[0.5, 0.5]] : [
+      // 1 sample during active 60fps wheel scrolling or turbulence animation, 4 samples (2x2 SSAA) for static view
+      const useFastSingleSample = isInteractiveZooming || isTurbulenceActive;
+      const subpixelOffsets = useFastSingleSample ? [[0.5, 0.5]] : [
         [0.25, 0.25],
         [0.75, 0.25],
         [0.25, 0.75],
@@ -2567,40 +2691,43 @@
             const spx = px + subpixelOffsets[s][0];
             const spy = py + subpixelOffsets[s][1];
 
-            const dx1 = spx - sx1;
-            const dy1 = spy - sy1;
-            const d1sq = dx1 * dx1 + dy1 * dy1;
+            for (let k = 0; k < turbulenceSpeckles.length; k++) {
+              const sp = turbulenceSpeckles[k];
+              const dx1 = spx - (sx1 + sp.dx);
+              const dy1 = spy - (sy1 + sp.dy);
+              const d1sq = dx1 * dx1 + dy1 * dy1;
 
-            const dx2 = spx - sx2;
-            const dy2 = spy - sy2;
-            const d2sq = dx2 * dx2 + dy2 * dy2;
+              const dx2 = spx - (sx2 + sp.dx);
+              const dy2 = spy - (sy2 + sp.dy);
+              const d2sq = dx2 * dx2 + dy2 * dy2;
 
-            if (d1sq <= maxR2 || d2sq <= maxR2) {
-              activeSamples++;
-              if (d1sq <= maxR2) {
-                let iStar1;
-                const r1u = Math.sqrt(d1sq) * airyScale;
-                if (currentScopeType === 'newtonian') {
-                  iStar1 = newtonianAiryIntensity(dx1 * airyScale, dy1 * airyScale, 0.20, vaneAlpha1, isSphericalAberrationActive) * flux1;
-                } else if (currentScopeType === 'sct') {
-                  iStar1 = (isSphericalAberrationActive ? airySphericalLookup(r1u, 0.35) : airyObstructedLookup(r1u, 0.35)) * flux1;
-                } else {
-                  iStar1 = (isSphericalAberrationActive ? airySphericalLookup(r1u, 0.00) : airyLookup(r1u)) * flux1;
+              if (d1sq <= maxR2 || d2sq <= maxR2) {
+                activeSamples++;
+                if (d1sq <= maxR2) {
+                  let iStar1;
+                  const r1u = Math.sqrt(d1sq) * airyScale;
+                  if (currentScopeType === 'newtonian') {
+                    iStar1 = newtonianAiryIntensity(dx1 * airyScale, dy1 * airyScale, 0.20, vaneAlpha1, isSphericalAberrationActive) * flux1 * sp.weight;
+                  } else if (currentScopeType === 'sct') {
+                    iStar1 = (isSphericalAberrationActive ? airySphericalLookup(r1u, 0.35) : airyObstructedLookup(r1u, 0.35)) * flux1 * sp.weight;
+                  } else {
+                    iStar1 = (isSphericalAberrationActive ? airySphericalLookup(r1u, 0.00) : airyLookup(r1u)) * flux1 * sp.weight;
+                  }
+                  sumI1 += iStar1;
                 }
-                sumI1 += iStar1;
-              }
 
-              if (d2sq <= maxR2) {
-                let iStar2;
-                const r2u = Math.sqrt(d2sq) * airyScale;
-                if (currentScopeType === 'newtonian') {
-                  iStar2 = newtonianAiryIntensity(dx2 * airyScale, dy2 * airyScale, 0.20, vaneAlpha2, isSphericalAberrationActive) * flux2;
-                } else if (currentScopeType === 'sct') {
-                  iStar2 = (isSphericalAberrationActive ? airySphericalLookup(r2u, 0.35) : airyObstructedLookup(r2u, 0.35)) * flux2;
-                } else {
-                  iStar2 = (isSphericalAberrationActive ? airySphericalLookup(r2u, 0.00) : airyLookup(r2u)) * flux2;
+                if (d2sq <= maxR2) {
+                  let iStar2;
+                  const r2u = Math.sqrt(d2sq) * airyScale;
+                  if (currentScopeType === 'newtonian') {
+                    iStar2 = newtonianAiryIntensity(dx2 * airyScale, dy2 * airyScale, 0.20, vaneAlpha2, isSphericalAberrationActive) * flux2 * sp.weight;
+                  } else if (currentScopeType === 'sct') {
+                    iStar2 = (isSphericalAberrationActive ? airySphericalLookup(r2u, 0.35) : airyObstructedLookup(r2u, 0.35)) * flux2 * sp.weight;
+                  } else {
+                    iStar2 = (isSphericalAberrationActive ? airySphericalLookup(r2u, 0.00) : airyLookup(r2u)) * flux2 * sp.weight;
+                  }
+                  sumI2 += iStar2;
                 }
-                sumI2 += iStar2;
               }
             }
           }
@@ -2777,6 +2904,78 @@
     let modalResizeObserver = null;
     let currentModalPower = 200.0; // Absolute optical power (magnification M in X): 200x default
 
+    let currentScopeType = (function() {
+      try {
+        return localStorage.getItem('double_stars_scope_type') || 'refractor';
+      } catch (e) {
+        return 'refractor';
+      }
+    })();
+    let isSphericalAberrationActive = (function() {
+      try {
+        return localStorage.getItem('double_stars_spherical_aberration') === 'true';
+      } catch (e) {
+        return false;
+      }
+    })();
+    let isTurbulenceActive = (function() {
+      try {
+        return sessionStorage.getItem('double_stars_turbulence') === 'true';
+      } catch (e) {
+        return false;
+      }
+    })();
+    let turbulenceSpeedMultiplier = (function() {
+      try {
+        // Clear stale localStorage values so hard reload resets to defaults
+        localStorage.removeItem('double_stars_turbulence_speed');
+        localStorage.removeItem('double_stars_turbulence_macro');
+        localStorage.removeItem('double_stars_turbulence_seeing');
+        localStorage.removeItem('double_stars_turbulence_r0');
+        
+        const val = parseFloat(sessionStorage.getItem('double_stars_turbulence_speed'));
+        return (!isNaN(val) && val >= 0.2 && val <= 20.0) ? val : 10.0;
+      } catch (e) {
+        return 10.0;
+      }
+    })();
+    let turbulenceMacroMultiplier = (function() {
+      try {
+        const val = parseFloat(sessionStorage.getItem('double_stars_turbulence_macro'));
+        return (!isNaN(val) && val >= 0.0 && val <= 2.0) ? val : 0.30;
+      } catch (e) {
+        return 0.30;
+      }
+    })();
+    let turbulenceSeeingArcsec = (function() {
+      try {
+        const val = parseFloat(sessionStorage.getItem('double_stars_turbulence_seeing'));
+        return (!isNaN(val) && val >= 0.8 && val <= 10.0) ? val : 3.0;
+      } catch (e) {
+        return 3.0;
+      }
+    })();
+
+    let turbulenceRafId = null;
+    let turbulenceStartTime = performance.now();
+
+    function startTurbulenceAnimation() {
+      if (turbulenceRafId) cancelAnimationFrame(turbulenceRafId);
+      function loop() {
+        if (!currentModalStarId || !isTurbulenceActive) return;
+        renderSimulationModal(true);
+        turbulenceRafId = requestAnimationFrame(loop);
+      }
+      turbulenceRafId = requestAnimationFrame(loop);
+    }
+
+    function stopTurbulenceAnimation() {
+      if (turbulenceRafId) {
+        cancelAnimationFrame(turbulenceRafId);
+        turbulenceRafId = null;
+      }
+    }
+
     function openSimulationModal(starId) {
       if (!userAperture) return;
       currentModalStarId = starId;
@@ -2787,6 +2986,9 @@
       modalApertureInput.value = userAperture;
 
       renderSimulationModal();
+      if (isTurbulenceActive) {
+        startTurbulenceAnimation();
+      }
 
       if (!modalResizeObserver && typeof ResizeObserver !== 'undefined') {
         modalResizeObserver = new ResizeObserver(() => {
@@ -2802,6 +3004,7 @@
     }
 
     function closeSimulationModal() {
+      stopTurbulenceAnimation();
       document.getElementById('simModalBackdrop').classList.remove('active');
       document.getElementById('simModal').classList.remove('active');
       currentModalStarId = null;
@@ -2810,20 +3013,6 @@
       }
     }
 
-    let currentScopeType = (function() {
-      try {
-        return localStorage.getItem('double_stars_scope_type') || 'refractor';
-      } catch (e) {
-        return 'refractor';
-      }
-    })();
-    let isSphericalAberrationActive = (function() {
-      try {
-        return localStorage.getItem('double_stars_spherical_aberration') === 'true';
-      } catch (e) {
-        return false;
-      }
-    })();
     let isInteractiveZooming = false;
     let zoomDebounceTimer = null;
     let zoomRafPending = false;
@@ -2833,7 +3022,16 @@
       const star = DOUBLE_STARS_DATA.find(s => s.id === currentModalStarId);
       if (!star) return;
 
-      document.getElementById('simModalTitle').innerText = `${star.name} Simulation`;
+      // Populate and sync target star select dropdown in modal header
+      const starSelect = document.getElementById('simModalStarSelect');
+      if (starSelect) {
+        if (starSelect.options.length === 0) {
+          starSelect.innerHTML = DOUBLE_STARS_DATA.map(s => `<option value="${s.id}">${s.name} (${s.constellation})</option>`).join('');
+        }
+        if (starSelect.value !== currentModalStarId) {
+          starSelect.value = currentModalStarId;
+        }
+      }
 
       const wrapper = document.getElementById('simModalSvgWrapper');
       const wrapperWidth = wrapper ? (wrapper.clientWidth || wrapper.getBoundingClientRect().width || 400) : 400;
@@ -2891,6 +3089,37 @@
         sphericalBtn.setAttribute('data-spherical', isSphericalAberrationActive ? 'true' : 'false');
         sphericalBtn.classList.toggle('active', isSphericalAberrationActive);
         sphericalBtn.innerText = `0.3 λ Spherical Aberration: ${isSphericalAberrationActive ? 'ON' : 'OFF'}`;
+      }
+
+      // Sync Atmospheric Turbulence toggle button & slider controls in modal sidebar
+      const turbulenceBtn = document.getElementById('modalTurbulenceToggle');
+      const turbulenceControlsGroup = document.getElementById('modalTurbulenceControlsGroup');
+      const speedSlider = document.getElementById('modalTurbulenceSpeedSlider');
+      const speedVal = document.getElementById('modalTurbulenceSpeedVal');
+      const macroSlider = document.getElementById('modalTurbulenceMacroSlider');
+      const macroVal = document.getElementById('modalTurbulenceMacroVal');
+      const r0Slider = document.getElementById('modalTurbulenceR0Slider');
+      const r0Val = document.getElementById('modalTurbulenceR0Val');
+
+      if (turbulenceBtn) {
+        turbulenceBtn.setAttribute('data-turbulence', isTurbulenceActive ? 'true' : 'false');
+        turbulenceBtn.classList.toggle('active', isTurbulenceActive);
+        turbulenceBtn.innerText = `Atmospheric Turbulence: ${isTurbulenceActive ? 'ON' : 'OFF'}`;
+      }
+      if (turbulenceControlsGroup) {
+        turbulenceControlsGroup.style.display = isTurbulenceActive ? 'flex' : 'none';
+      }
+      if (speedSlider && speedVal) {
+        speedSlider.value = turbulenceSpeedMultiplier;
+        speedVal.innerText = `${turbulenceSpeedMultiplier.toFixed(1)}x`;
+      }
+      if (macroSlider && macroVal) {
+        macroSlider.value = Math.round(turbulenceMacroMultiplier * 100);
+        macroVal.innerText = `${Math.round(turbulenceMacroMultiplier * 100)}%`;
+      }
+      if (r0Slider && r0Val) {
+        r0Slider.value = turbulenceSeeingArcsec.toFixed(1);
+        r0Val.innerText = `${turbulenceSeeingArcsec.toFixed(1)}" seeing`;
       }
 
       const diff = computeObservingDifficulty(star, userAperture);
@@ -3377,6 +3606,17 @@
         modalMain.addEventListener('wheel', handleModalWheel, { passive: false });
       }
 
+      const starSelect = document.getElementById('simModalStarSelect');
+      if (starSelect) {
+        starSelect.addEventListener('change', (e) => {
+          const selectedId = e.target.value;
+          if (selectedId) {
+            currentModalStarId = selectedId;
+            renderSimulationModal();
+          }
+        });
+      }
+
       const resetBtn = document.getElementById('simZoomResetBtn');
       if (resetBtn) {
         resetBtn.addEventListener('click', () => {
@@ -3409,6 +3649,60 @@
             localStorage.setItem('double_stars_spherical_aberration', isSphericalAberrationActive ? 'true' : 'false');
           } catch (e) {}
           if (currentModalStarId) renderSimulationModal();
+        });
+      }
+
+      const turbulenceBtn = document.getElementById('modalTurbulenceToggle');
+      if (turbulenceBtn) {
+        turbulenceBtn.addEventListener('click', () => {
+          isTurbulenceActive = !isTurbulenceActive;
+          try {
+            sessionStorage.setItem('double_stars_turbulence', isTurbulenceActive ? 'true' : 'false');
+          } catch (e) {}
+          if (isTurbulenceActive) {
+            startTurbulenceAnimation();
+          } else {
+            stopTurbulenceAnimation();
+            if (currentModalStarId) renderSimulationModal(false);
+          }
+        });
+      }
+
+      const speedSlider = document.getElementById('modalTurbulenceSpeedSlider');
+      if (speedSlider) {
+        speedSlider.addEventListener('input', (e) => {
+          turbulenceSpeedMultiplier = parseFloat(e.target.value) || 10.0;
+          try {
+            sessionStorage.setItem('double_stars_turbulence_speed', turbulenceSpeedMultiplier.toString());
+          } catch (e) {}
+          const speedVal = document.getElementById('modalTurbulenceSpeedVal');
+          if (speedVal) speedVal.innerText = `${turbulenceSpeedMultiplier.toFixed(1)}x`;
+        });
+      }
+
+      const macroSlider = document.getElementById('modalTurbulenceMacroSlider');
+      if (macroSlider) {
+        macroSlider.addEventListener('input', (e) => {
+          turbulenceMacroMultiplier = (parseFloat(e.target.value) || 0) / 100.0;
+          try {
+            sessionStorage.setItem('double_stars_turbulence_macro', turbulenceMacroMultiplier.toString());
+          } catch (e) {}
+          const macroVal = document.getElementById('modalTurbulenceMacroVal');
+          if (macroVal) macroVal.innerText = `${Math.round(turbulenceMacroMultiplier * 100)}%`;
+        });
+      }
+
+      const r0Slider = document.getElementById('modalTurbulenceR0Slider');
+      if (r0Slider) {
+        r0Slider.addEventListener('input', (e) => {
+          turbulenceSeeingArcsec = Math.max(0.8, Math.min(10.0, parseFloat(e.target.value) || 3.0));
+          try {
+            sessionStorage.setItem('double_stars_turbulence_seeing', turbulenceSeeingArcsec.toString());
+          } catch (e) {}
+          const r0Val = document.getElementById('modalTurbulenceR0Val');
+          if (r0Val) {
+            r0Val.innerText = `${turbulenceSeeingArcsec.toFixed(1)}" seeing`;
+          }
         });
       }
 
