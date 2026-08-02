@@ -2622,35 +2622,81 @@
       const sx2 = cx + halfSep * Math.cos(angleRad);
       const sy2 = cy + halfSep * Math.sin(angleRad);
 
-      // Perceptual magnitude flux scaling
-      // When ON: Rigel B (mag 6.8) maintains its <= 0.040 flux floor (dims/shrinks, never gets brighter)
-      // Struve 2398 A/B (mag 8.9 & 9.7) scale down to 0.009-0.014 flux (much dimmer & tighter than Rigel B)
-      const baseFlux1 = Math.max(0.008, Math.pow(10, -0.4 * (star.mag1 - 0.1) * 0.35));
-      const baseFlux2 = Math.max(0.008, Math.pow(10, -0.4 * (star.mag2 - 0.1) * 0.35));
+      // Unified Perceptual magnitude flux scaling
+      // Brightness Perception ON
+      const onBaseExp = 0.48;
+      const onMagExp = 0.95;
+      const onApExp = 0.50;
+      const onApBoost = 2.00;
+      const onUseApFloor = false;
+      const onApFloor = 0.40;
+      const onUseIThreshold = true;
+      const onThreshold = 0.005;
+      const onUseWidthScale = true;
+      const onWidthScale = 0.66;
+      const onUseWidthMin = false;
+      const onWidthMin = 0.15;
+      const onUseFluxFloor = true;
+      const onFluxFloor = 0.015;
 
-      const apFloor = 0.40;
-      const apExponent = 0.60;
-      const apPower = apFloor + (2.50 - apFloor) * Math.pow(Math.max(0, aperture - 50) / 150.0, apExponent);
+      // Standard Perception OFF
+      const offBaseExp = 0.25;
+      const offMagExp = 0.85;
+      const offApExp = 0.00;
+      const offApBoost = 0.25;
+      const offUseApFloor = false;
+      const offApFloor = 0.40;
+      const offUseIThreshold = false;
+      const offThreshold = 0.025;
+      const offUseWidthScale = false;
+      const offWidthScale = 0.56;
+      const offUseWidthMin = false;
+      const offWidthMin = 0.35;
+      const offUseFluxFloor = false;
+      const offFluxFloor = 0.04;
+
+      const activeBaseExp = isBrightnessPerceptionActive ? onBaseExp : offBaseExp;
+      const activeMagExp = isBrightnessPerceptionActive ? onMagExp : offMagExp;
+      const activeApExp = isBrightnessPerceptionActive ? onApExp : offApExp;
+      const activeApBoost = isBrightnessPerceptionActive ? onApBoost : offApBoost;
+      
+      const activeUseApFloor = isBrightnessPerceptionActive ? onUseApFloor : offUseApFloor;
+      const activeApFloorVal = isBrightnessPerceptionActive ? onApFloor : offApFloor;
+      
+      const activeUseIThreshold = isBrightnessPerceptionActive ? onUseIThreshold : offUseIThreshold;
+      const activeThresholdVal = isBrightnessPerceptionActive ? onThreshold : offThreshold;
+      
+      const activeUseWidthScale = isBrightnessPerceptionActive ? onUseWidthScale : offUseWidthScale;
+      const activeWidthScaleVal = isBrightnessPerceptionActive ? onWidthScale : offWidthScale;
+      
+      const activeUseWidthMin = isBrightnessPerceptionActive ? onUseWidthMin : offUseWidthMin;
+      const activeWidthMinVal = isBrightnessPerceptionActive ? onWidthMin : offWidthMin;
+      
+      const activeUseFluxFloor = isBrightnessPerceptionActive ? onUseFluxFloor : offUseFluxFloor;
+      const activeFluxFloorVal = isBrightnessPerceptionActive ? onFluxFloor : offFluxFloor;
+
+      const baseFlux1 = Math.max(0.008, Math.pow(10, -0.4 * (star.mag1 - 0.1) * activeBaseExp));
+      const baseFlux2 = Math.max(0.008, baseFlux1 * Math.pow(10, -0.4 * (star.mag2 - star.mag1) * activeMagExp));
+      
+      const activeApFloor = activeUseApFloor ? activeApFloorVal : 1.00;
+      const apPower = activeApFloor + (2.50 - activeApFloor) * Math.pow(Math.max(0, aperture - 50) / 150.0, activeApExp);
 
       let flux1 = baseFlux1 * apPower;
       let flux2 = baseFlux2 * apPower;
+      
+      const activeThreshold = activeUseIThreshold ? activeThresholdVal : 0.00;
+      const eta1 = Math.min(1.0, activeThreshold / baseFlux1);
+      const eta2 = Math.min(1.0, activeThreshold / baseFlux2);
 
-      // Magnitude-Dependent Visual Threshold Cutoff (when Brightness Perception modifier is ON)
-      let widthFactor1 = 1.0;
-      let widthFactor2 = 1.0;
+      const activeWidthMin = activeUseWidthMin ? activeWidthMinVal : 0.00;
+      const activeWidthScale = activeUseWidthScale ? activeWidthScaleVal : 0.00;
 
-      if (isBrightnessPerceptionActive) {
-        const iThreshold = 0.025;
+      const widthFactor1 = Math.min(1.0, Math.max(activeWidthMin, (1.0 - activeWidthScale * Math.sqrt(eta1))));
+      const widthFactor2 = Math.min(1.0, Math.max(activeWidthMin, (1.0 - activeWidthScale * Math.sqrt(eta2))));
 
-        const eta1 = Math.min(1.0, iThreshold / baseFlux1);
-        const eta2 = Math.min(1.0, iThreshold / baseFlux2);
-
-        widthFactor1 = Math.min(1.0, Math.max(0.35, (1.0 - 0.56 * Math.sqrt(eta1))));
-        widthFactor2 = Math.min(1.0, Math.max(0.35, (1.0 - 0.56 * Math.sqrt(eta2))));
-      } else {
-        // When Brightness Perception is OFF: normalized relative scaling for primary star
-        flux1 = 1.0;
-        flux2 = Math.max(0.04, Math.pow(10, -0.4 * (star.mag2 - star.mag1)));
+      const activeFluxFloor = activeUseFluxFloor ? activeFluxFloorVal : 0.00;
+      if (activeFluxFloor > 0) {
+        flux2 = Math.max(activeFluxFloor, flux2);
       }
 
       // Spider vane diffraction alpha ratio (balanced sweet spot: clear 4-pointed spikes without overpowering the field)
@@ -2825,18 +2871,10 @@
           const i1 = sumI1 / sampleCount;
           const i2 = sumI2 / sampleCount;
 
-          // Aperture-dependent linear brightness boost (when Brightness Perception is ON)
-          // 50mm = 0% boost, 200mm = +150% boost (default multiplier 1.0)
-          let brightnessGain = 1.0;
-          if (isBrightnessPerceptionActive) {
-            const apBoostFrac = Math.max(0, Math.min(1, (aperture - 50) / 150.0));
-            brightnessGain = 1.0 + (1.50 * apBoostFrac);
-          }
-
-          // Per-channel physical light flux
-          let rr = (i1 * rgb1[0] / 255 + i2 * rgb2[0] / 255) * brightnessGain;
-          let gg = (i1 * rgb1[1] / 255 + i2 * rgb2[1] / 255) * brightnessGain;
-          let bb = (i1 * rgb1[2] / 255 + i2 * rgb2[2] / 255) * brightnessGain;
+          // Per-channel physical light flux (unboosted before tone mapping)
+          let rr = i1 * rgb1[0] / 255 + i2 * rgb2[0] / 255;
+          let gg = i1 * rgb1[1] / 255 + i2 * rgb2[1] / 255;
+          let bb = i1 * rgb1[2] / 255 + i2 * rgb2[2] / 255;
 
           // Apply smooth logarithmic tone map curve
           rr = logarithmicToneMap(rr);
@@ -2848,6 +2886,15 @@
           rr = lum + (rr - lum) * saturationMix;
           gg = lum + (gg - lum) * saturationMix;
           bb = lum + (bb - lum) * saturationMix;
+
+          // Post-Tonemap Aperture Brightness Boost
+          // Applied AFTER tone mapping so bright primaries saturate naturally without pulling faint secondaries up to 100%
+          const apBoostFrac = Math.max(0, Math.min(1, (aperture - 50) / 150.0));
+          const brightnessGain = 1.0 + (activeApBoost * 1.50 * apBoostFrac);
+
+          rr = Math.min(1.0, rr * brightnessGain);
+          gg = Math.min(1.0, gg * brightnessGain);
+          bb = Math.min(1.0, bb * brightnessGain);
 
           const idx = (py * renderSize + px) * 4;
           data[idx]     = Math.min(255, rr * 255 + 0.5) | 0;
