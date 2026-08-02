@@ -1343,11 +1343,69 @@
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
+      cursor: ns-resize;
     }
     .sim-modal-svg-wrapper svg {
       width: 100%;
       height: 100%;
       display: block;
+    }
+    .sim-zoom-controls {
+      position: absolute;
+      bottom: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 0.35rem 0.85rem;
+      z-index: 10;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+      user-select: none;
+    }
+    .sim-zoom-badge {
+      font-family: var(--font-mono);
+      font-size: 0.775rem;
+      font-weight: 600;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+    .sim-zoom-reset-btn {
+      background: var(--accent-blue, #3b82f6);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .sim-zoom-reset-btn:hover {
+      background: #2563eb;
+      transform: scale(1.04);
+    }
+    body.night-vision .sim-zoom-controls {
+      background: rgba(30, 0, 0, 0.9);
+      border-color: #660000;
+    }
+    body.night-vision .sim-zoom-badge {
+      color: #ff6666;
+    }
+    body.night-vision .sim-zoom-reset-btn {
+      background: #990000;
+      color: #ffcccc;
+    }
+    body.night-vision .sim-zoom-reset-btn:hover {
+      background: #cc0000;
     }
     
     @media (max-width: 680px) {
@@ -1448,9 +1506,15 @@
         </div>
 
         <!-- Right Area: Simulation Viewport (FOV) -->
-        <div class="sim-modal-main">
-          <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper">
+        <div class="sim-modal-main" id="simModalMain">
+          <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper" title="Use scroll wheel to zoom (1x to 5x per mm aperture)">
             <!-- SVG rendered here -->
+          </div>
+          <div class="sim-zoom-controls" id="simZoomControls">
+            <span class="sim-zoom-badge" id="simZoomBadge">2.0x/mm</span>
+            <button class="sim-zoom-reset-btn" id="simZoomResetBtn" style="display: none;" title="Reset zoom to default 2x/mm">
+              ↺ Reset Zoom
+            </button>
           </div>
         </div>
       </div>
@@ -2084,8 +2148,8 @@
       `;
     }
 
-    // Render Eyepiece Simulation SVG Viewport at 2x/mm Aperture Power
-    function createEyepieceSimSVG(star, aperture, scaleOverride = null, viewBoxSize = null) {
+    // Render Eyepiece Simulation SVG Viewport at 2x/mm Aperture Power (or zoomed magFactor)
+    function createEyepieceSimSVG(star, aperture, scaleOverride = null, viewBoxSize = null, magFactor = 2.0) {
       if (!aperture || aperture <= 0) {
         return `
           <div class="simulation-box" style="cursor: default;">
@@ -2099,7 +2163,7 @@
         `;
       }
 
-      const power = aperture * 2;
+      const power = aperture * magFactor;
       const rayleigh = 138 / aperture;
       const deltaM = Math.abs(star.mag1 - star.mag2);
       const contrastMultiplier = 1 + (deltaM > 1.5 ? Math.min(2.5, (deltaM - 1.5) * 0.3) : 0);
@@ -2125,7 +2189,7 @@
       const cy = vb / 2;
 
       const angleRad = (star.pa - 90) * (Math.PI / 180);
-      const halfSep = Math.min(vb / 2 - 10, scaledVisualSep / 2);
+      const halfSep = scaleOverride !== null ? (scaledVisualSep / 2) : Math.min(vb / 2 - 10, scaledVisualSep / 2);
 
       const x1 = cx - halfSep * Math.cos(angleRad);
       const y1 = cy - halfSep * Math.sin(angleRad);
@@ -2180,7 +2244,7 @@
 
       return `
         <div class="simulation-box">
-          <div class="details-title">🔭 Eyepiece View at ${power}x (${aperture}mm)</div>
+          <div class="details-title">🔭 Eyepiece View at ${Math.round(power)}x (${aperture}mm)</div>
           <div class="eyepiece-viewport">
             <svg class="sim-canvas" viewBox="0 0 ${vb} ${vb}" style="filter: saturate(0.5);">
               <defs>
@@ -2213,17 +2277,19 @@
               </g>
             </svg>
           </div>
-          <div class="sim-mag-label">${power}x | TFOV: ${tfovLabel} | AFOV: ~${afovDeg.toFixed(1)}&deg;</div>
+          <div class="sim-mag-label">${Math.round(power)}x (${magFactor.toFixed(1)}x/mm) | TFOV: ${tfovLabel} | AFOV: ~${afovDeg.toFixed(1)}&deg;</div>
         </div>
       `;
     }
 
     // Modal Controller logic
     let modalResizeObserver = null;
+    let modalMagFactor = 2.0;
 
     function openSimulationModal(starId) {
       if (!userAperture) return;
       currentModalStarId = starId;
+      modalMagFactor = 2.0; // Baseline magnification factor: 2x per mm aperture
       document.getElementById('simModalBackdrop').classList.add('active');
       document.getElementById('simModal').classList.add('active');
       const modalApertureInput = document.getElementById('modalApertureInput');
@@ -2263,11 +2329,12 @@
       const wrapper = document.getElementById('simModalSvgWrapper');
       const wrapperWidth = wrapper ? (wrapper.clientWidth || wrapper.getBoundingClientRect().width || 400) : 400;
       // Reference standard: 170 viewBox units at 400px container width.
-      // Scaling viewBoxSize linearly with container width maintains a constant screen pixel scale (400/170 = 2.3529 px/unit)
-      // so star sizes and separation in pixels remain unchanged while FOV circle scales.
+      // Scaling viewBoxSize linearly with container width maintains a constant screen pixel scale (400/170 = 2.3529 px/unit).
+      // Magnification zoom scales scaleUsed linearly with (modalMagFactor / 2.0).
       const viewBoxSize = 170 * (wrapperWidth / 400);
+      const scaleUsed = 0.125 * (modalMagFactor / 2.0);
 
-      const rawHtml = createEyepieceSimSVG(star, userAperture, 0.125, viewBoxSize);
+      const rawHtml = createEyepieceSimSVG(star, userAperture, scaleUsed, viewBoxSize, modalMagFactor);
       
       const svgMatch = rawHtml.match(/<svg[\s\S]*<\/svg>/);
       if (svgMatch && wrapper) {
@@ -2277,19 +2344,32 @@
       // Update Modal Stats
       const dawes = 116 / userAperture;
       const rayleigh = 138 / userAperture;
-      const power = userAperture * 2;
+      const power = userAperture * modalMagFactor;
 
-      const modalTfovSec = (viewBoxSize * rayleigh) / (12.5 * 0.125);
+      const modalTfovSec = (viewBoxSize * rayleigh) / (12.5 * scaleUsed);
       const modalTfovMin = modalTfovSec / 60;
       const modalAfovDeg = (modalTfovMin * power) / 60;
       const modalTfovStr = modalTfovMin >= 1.0 ? `${modalTfovMin.toFixed(1)}'` : `${Math.round(modalTfovSec)}"`;
 
-      document.getElementById('modalPowerVal').innerText = power + 'x';
+      const magFactorStr = (modalMagFactor).toFixed(1);
+      document.getElementById('modalPowerVal').innerText = `${Math.round(power)}x (${magFactorStr}x/mm)`;
       document.getElementById('modalTfovVal').innerText = modalTfovStr;
       document.getElementById('modalAfovVal').innerText = `~${modalAfovDeg.toFixed(1)}°`;
       document.getElementById('modalDawesVal').innerText = dawes.toFixed(2) + '"';
       document.getElementById('modalRayleighVal').innerText = rayleigh.toFixed(2) + '"';
       document.getElementById('modalSepVal').innerText = (typeof star.sep === 'number' ? star.sep.toFixed(2) : star.sep) + '"';
+
+      // Update Reset Zoom button visibility & Zoom badge
+      const isDeviated = Math.abs(modalMagFactor - 2.0) > 0.02;
+      const resetBtn = document.getElementById('simZoomResetBtn');
+      const zoomBadge = document.getElementById('simZoomBadge');
+      if (resetBtn) {
+        resetBtn.style.display = isDeviated ? 'inline-flex' : 'none';
+      }
+      if (zoomBadge) {
+        zoomBadge.innerText = `${magFactorStr}x/mm`;
+        zoomBadge.style.color = isDeviated ? '#38bdf8' : '#94a3b8';
+      }
 
       const diff = computeObservingDifficulty(star, userAperture);
       const modalDiffVal = document.getElementById('modalDifficultyVal');
@@ -2322,6 +2402,20 @@
           }
         }
       });
+    }
+
+    // Smooth scroll-wheel zoom handler (1x to 5x per mm aperture)
+    function handleModalWheel(e) {
+      if (!currentModalStarId || !userAperture) return;
+      e.preventDefault();
+      
+      let newFactor = modalMagFactor * Math.pow(1.0012, -e.deltaY);
+      newFactor = Math.max(1.0, Math.min(5.0, newFactor));
+      
+      if (Math.abs(newFactor - modalMagFactor) > 0.0001) {
+        modalMagFactor = newFactor;
+        renderSimulationModal();
+      }
     }
 
     // Helper: Season Badge
@@ -2716,6 +2810,23 @@
       document.getElementById('simModalClose').addEventListener("click", closeSimulationModal);
       document.getElementById('simModalBackdrop').addEventListener("click", closeSimulationModal);
       
+      const modalSvgWrapper = document.getElementById('simModalSvgWrapper');
+      if (modalSvgWrapper) {
+        modalSvgWrapper.addEventListener('wheel', handleModalWheel, { passive: false });
+      }
+      const modalMain = document.getElementById('simModalMain');
+      if (modalMain) {
+        modalMain.addEventListener('wheel', handleModalWheel, { passive: false });
+      }
+
+      const resetBtn = document.getElementById('simZoomResetBtn');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          modalMagFactor = 2.0;
+          renderSimulationModal();
+        });
+      }
+
       document.getElementById('modalApertureInput').addEventListener("input", (e) => {
         apertureInput.value = e.target.value;
         updateTelescopeSetup();
