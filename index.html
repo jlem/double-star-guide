@@ -1214,8 +1214,8 @@
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 16px;
-      width: min(92vw, 1200px);
-      height: min(95vh, 1000px);
+      width: min(96vw, 1400px);
+      height: min(96vh, 1100px);
       z-index: 1001;
       display: none;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
@@ -1403,6 +1403,52 @@
     body.night-vision .sim-zoom-reset-btn:hover {
       background: #cc0000;
     }
+
+    .scope-type-toggle {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.25rem;
+      width: 100%;
+    }
+    .scope-type-btn {
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.45rem 0.6rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .scope-type-btn:hover {
+      color: var(--text-main);
+      border-color: #38bdf8;
+    }
+    .scope-type-btn.active {
+      background: #0ea5e9;
+      border-color: #0ea5e9;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(14, 165, 233, 0.3);
+    }
+    body.night-vision .scope-type-btn {
+      background: rgba(40, 0, 0, 0.4);
+      border-color: rgba(120, 0, 0, 0.5);
+      color: #ff8888;
+    }
+    body.night-vision .scope-type-btn.active {
+      background: #990000;
+      border-color: #cc0000;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(153, 0, 0, 0.5);
+    }
     
     @media (max-width: 680px) {
       .sim-modal {
@@ -1478,6 +1524,24 @@
                 <button class="preset-chip modal-preset-chip" data-aperture="150">150mm</button>
               </div>
             </div>
+
+            <!-- Optical Design Selector in Modal Sidebar -->
+            <div class="filter-group" style="margin-top: 0.65rem;">
+              <label class="filter-label">Optical Design</label>
+              <div class="scope-type-toggle" id="modalScopeTypeToggle">
+                <button class="scope-type-btn active" data-scope="refractor" title="Unobstructed Refractor Pupil (Classic Airy diffraction pattern)">Refractor (Unobstructed)</button>
+                <button class="scope-type-btn" data-scope="sct" title="Schmidt/Maksutov-Cassegrain Pupil (35% secondary mirror central obstruction, no spider vanes)">SCT / MCT (35% Obstruction)</button>
+                <button class="scope-type-btn" data-scope="newtonian" title="Newtonian Reflector Pupil (20% secondary mirror central obstruction + 4 thin spider diffraction vanes)">Newtonian (20% Obs + 4 Vanes)</button>
+              </div>
+            </div>
+
+            <!-- Aberrations Section in Modal Sidebar -->
+            <div class="filter-group" style="margin-top: 0.65rem;">
+              <label class="filter-label">Aberrations</label>
+              <button class="scope-type-btn" id="modalSphericalToggle" data-spherical="false" title="Toggle 0.3 waves of primary spherical aberration (W040 = 0.3λ, Strehl ratio drops from 1.0 to ~0.72)">
+                0.3 λ Spherical Aberration: OFF
+              </button>
+            </div>
           </div>
 
           <div class="sim-sidebar-section">
@@ -1503,7 +1567,7 @@
 
         <!-- Right Area: Simulation Viewport (FOV) -->
         <div class="sim-modal-main" id="simModalMain">
-          <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper" title="Use scroll wheel to zoom (1x to 5x per mm aperture)">
+          <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper" title="Use scroll wheel to zoom (1x to 10x per mm aperture)">
             <!-- SVG rendered here -->
           </div>
           <div class="sim-zoom-controls" id="simZoomControls">
@@ -1892,20 +1956,14 @@
       customTooltip.style.top = `${top}px`;
     }
 
-    // Initialize App & Load Data from double_stars_catalog_expanded.json
+    // Initialize App & Load Data from double_stars_catalog.json
     async function init() {
       try {
-        const response = await fetch("double_stars_catalog_expanded.json");
-        if (!response.ok) throw new Error("Failed to load expanded catalog JSON");
+        const response = await fetch("double_stars_catalog.json");
+        if (!response.ok) throw new Error("Failed to load catalog JSON");
         DOUBLE_STARS_DATA = await response.json();
       } catch (err) {
-        console.warn("Could not fetch double_stars_catalog_expanded.json dynamically, falling back to double_stars_catalog.json", err);
-        try {
-          const res2 = await fetch("double_stars_catalog.json");
-          DOUBLE_STARS_DATA = await res2.json();
-        } catch (err2) {
-          console.error("Failed to load catalog", err2);
-        }
+        console.error("Failed to load double_stars_catalog.json", err);
       }
 
       currentData = [...DOUBLE_STARS_DATA];
@@ -1968,10 +2026,10 @@
       }
     }
 
-    // Calculate Estimated Observing Difficulty (Weighted: 70% Separation, 15% Delta Mag, 10% Component Mags)
+    // Compute Eyepiece Observing Difficulty (Easy, Moderate, Hard)
     function computeObservingDifficulty(star, aperture) {
       const ap = aperture || 60;
-      const rayleigh = 138 / ap;
+      const rayleigh = 127.3 / ap;
       const deltaM = Math.abs(star.mag1 - star.mag2);
       const m1 = star.mag1;
       const m2 = star.mag2;
@@ -2033,42 +2091,36 @@
     function computeAppearance(star, aperture) {
       if (!aperture || aperture <= 0) return null;
 
-      const rayleigh = 138 / aperture;
+      const rayleigh = 127.3 / aperture;
       const deltaM = Math.abs(star.mag1 - star.mag2);
-      
-      const contrastMultiplier = 1 + (deltaM > 1.5 ? Math.min(2.5, (deltaM - 1.5) * 0.3) : 0);
-      const r_primary = Math.max(1.8, 8.5 - (star.mag1 * 0.85));
-      const brightnessMultiplier = 1 + Math.max(0, (r_primary - 3.87) * 0.224);
-      const combinedMultiplier = 1 + (contrastMultiplier - 1) + (brightnessMultiplier - 1);
-      const requiredSep = rayleigh * combinedMultiplier;
-      const ratio = star.sep / requiredSep;
+      const ratio = star.sep / rayleigh;
 
       let label, level, color, bg, icon, reason;
 
-      if (ratio < 0.5) {
+      if (ratio < 0.65) {
         label = "Unresolved";
         level = 5;
         color = "#ef4444";
         bg = "rgba(239, 68, 68, 0.15)";
         reason = `${star.name}: Unresolved in ${aperture}mm. Appears as a single star.`;
-      } else if (ratio < 0.75) {
+      } else if (ratio < 0.90) {
         label = "Elongated";
         level = 4;
         color = "#f97316";
         bg = "rgba(249, 115, 22, 0.15)";
         reason = `${star.name}: Elongated in ${aperture}mm. Appears as an elongated star (oval).`;
-      } else if (ratio < 1.0) {
+      } else if (ratio < 1.20) {
         label = "Notched";
         level = 3;
         color = "#fbbf24";
         bg = "rgba(251, 191, 36, 0.15)";
-        reason = `${star.name}: Notched in ${aperture}mm. Two overlapping spurious disks and shared diffraction ring.`;
-      } else if (ratio < 1.7) {
+        reason = `${star.name}: Notched in ${aperture}mm. Two overlapping spurious disks with a waist notch.`;
+      } else if (ratio < 2.00) {
         label = "Split";
         level = 2;
         color = "#a3e635";
         bg = "rgba(163, 230, 53, 0.15)";
-        reason = `${star.name}: Split in ${aperture}mm. Split spurious disks with a shared/touching diffraction ring.`;
+        reason = `${star.name}: Split in ${aperture}mm. Split spurious disks with dark space between cores.`;
       } else {
         label = "Separated";
         level = 1;
@@ -2080,7 +2132,7 @@
       const rayleighMultiple = (star.sep / rayleigh).toFixed(1);
       reason += ` Separation (${star.sep}") is ${rayleighMultiple}x Rayleigh Limit (${rayleigh.toFixed(2)}")`;
       if (deltaM > 1.0) {
-        reason += ` with high magnitude difference (Δm ${deltaM.toFixed(1)}).`;
+        reason += ` with magnitude difference Δm ${deltaM.toFixed(1)}.`;
       } else {
         reason += `.`;
       }
@@ -2197,6 +2249,185 @@
       return AIRY_LUT[i] + (AIRY_LUT[i + 1] - AIRY_LUT[i]) * frac;
     }
 
+    // Obstructed pupil Airy intensity: I_obs(u) = [2·J₁(u)/u - ε²·2·J₁(εu)/(εu)]² / (1 - ε²)²
+    function airyObstructedIntensity(u, eps = 0.30) {
+      if (u < 1e-10) return 1.0;
+      const j1 = besselJ1(u);
+      const val1 = 2.0 * j1 / u;
+      const uEps = u * eps;
+      const j1Eps = besselJ1(uEps);
+      const val2 = 2.0 * j1Eps / uEps;
+      const combined = (val1 - eps * eps * val2) / (1.0 - eps * eps);
+      return combined * combined;
+    }
+
+    const AIRY_OBS_20_LUT = new Float64Array(AIRY_LUT_SIZE);
+    const AIRY_OBS_35_LUT = new Float64Array(AIRY_LUT_SIZE);
+    (function initAiryObsLUT() {
+      for (let i = 0; i < AIRY_LUT_SIZE; i++) {
+        const u = (i / AIRY_LUT_SIZE) * AIRY_LUT_MAX_U;
+        AIRY_OBS_20_LUT[i] = airyObstructedIntensity(u, 0.20);
+        AIRY_OBS_35_LUT[i] = airyObstructedIntensity(u, 0.35);
+      }
+    })();
+
+    function airyObstructedLookup(u, eps = 0.35) {
+      if (u < 0) u = -u;
+      if (u >= AIRY_LUT_MAX_U) return 0;
+      const lut = (eps === 0.20) ? AIRY_OBS_20_LUT : AIRY_OBS_35_LUT;
+      const idx = (u / AIRY_LUT_MAX_U) * AIRY_LUT_SIZE;
+      const i = idx | 0;
+      if (i >= AIRY_LUT_SIZE - 1) return lut[AIRY_LUT_SIZE - 1];
+      const frac = idx - i;
+      return lut[i] + (lut[i + 1] - lut[i]) * frac;
+    }
+
+    // Bessel J0(x) — Rational polynomial approximation (Abramowitz & Stegun §9.4)
+    function besselJ0(x) {
+      const ax = Math.abs(x);
+      if (ax < 3.75) {
+        const y = (x / 3.75) * (x / 3.75);
+        return 1.0 + y * (-2.2499997 + y * (1.2656208 + y * (-0.3163866 + y * (0.0444479 + y * (-0.0039444 + y * 0.0002100)))));
+      } else {
+        const y = 3.75 / ax;
+        const f0 = 0.79788456 + y * (-0.00000077 + y * (-0.00552740 + y * (0.00009512 + y * (0.00137237 + y * (-0.00072805)))));
+        const theta0 = ax - 0.78539816 + y * (-0.04166397 + y * (-0.00003954 + y * (0.00262573 + y * (-0.00054125 + y * (-0.00029333)))));
+        return (1.0 / Math.sqrt(ax)) * f0 * Math.cos(theta0);
+      }
+    }
+
+    // Exact Hankel transform for pupil with primary spherical aberration (W040 = 0.3λ)
+    function sphericalAiryIntensity(u, eps = 0.0, w040 = 0.3) {
+      if (u < 1e-10 && w040 === 0.0) return 1.0;
+      const steps = 120;
+      const dRho = (1.0 - eps) / steps;
+      let reSum = 0;
+      let imSum = 0;
+      const phaseConst = 2.0 * Math.PI * w040;
+
+      for (let i = 0; i < steps; i++) {
+        const rho = eps + (i + 0.5) * dRho;
+        const phase = phaseConst * Math.pow(rho, 4);
+        const j0 = besselJ0(u * rho);
+        const weight = rho * j0 * dRho;
+        reSum += Math.cos(phase) * weight;
+        imSum += Math.sin(phase) * weight;
+      }
+
+      // Normalization constant (unaberrated peak intensity for current eps)
+      const norm = Math.pow((1.0 - eps * eps) / 2.0, 2);
+      return (reSum * reSum + imSum * imSum) / norm;
+    }
+
+    const AIRY_SPHERICAL_00_LUT = new Float64Array(AIRY_LUT_SIZE);
+    const AIRY_SPHERICAL_20_LUT = new Float64Array(AIRY_LUT_SIZE);
+    const AIRY_SPHERICAL_35_LUT = new Float64Array(AIRY_LUT_SIZE);
+
+    const NEWTONIAN_SPHERICAL_RE_LUT = new Float64Array(AIRY_LUT_SIZE);
+    const NEWTONIAN_SPHERICAL_IM_LUT = new Float64Array(AIRY_LUT_SIZE);
+
+    (function initAirySphericalLUTs() {
+      const epsNewt = 0.20;
+      const w040 = 0.3;
+      const steps = 120;
+      const dRho = (1.0 - epsNewt) / steps;
+      const phaseConst = 2.0 * Math.PI * w040;
+      const normFactor = (1.0 - epsNewt * epsNewt) / 2.0;
+
+      for (let i = 0; i < AIRY_LUT_SIZE; i++) {
+        const u = (i / AIRY_LUT_SIZE) * AIRY_LUT_MAX_U;
+        AIRY_SPHERICAL_00_LUT[i] = sphericalAiryIntensity(u, 0.00, 0.3);
+        AIRY_SPHERICAL_20_LUT[i] = sphericalAiryIntensity(u, 0.20, 0.3);
+        AIRY_SPHERICAL_35_LUT[i] = sphericalAiryIntensity(u, 0.35, 0.3);
+
+        let reSum = 0;
+        let imSum = 0;
+        for (let j = 0; j < steps; j++) {
+          const rho = epsNewt + (j + 0.5) * dRho;
+          const phase = phaseConst * Math.pow(rho, 4);
+          const j0 = besselJ0(u * rho);
+          const weight = rho * j0 * dRho;
+          reSum += Math.cos(phase) * weight;
+          imSum += Math.sin(phase) * weight;
+        }
+        NEWTONIAN_SPHERICAL_RE_LUT[i] = reSum / normFactor;
+        NEWTONIAN_SPHERICAL_IM_LUT[i] = imSum / normFactor;
+      }
+    })();
+
+    function airySphericalLookup(u, eps = 0.0) {
+      if (u < 0) u = -u;
+      if (u >= AIRY_LUT_MAX_U) return 0;
+      let lut = AIRY_SPHERICAL_00_LUT;
+      if (eps === 0.20) lut = AIRY_SPHERICAL_20_LUT;
+      else if (eps === 0.35) lut = AIRY_SPHERICAL_35_LUT;
+
+      const idx = (u / AIRY_LUT_MAX_U) * AIRY_LUT_SIZE;
+      const i = idx | 0;
+      if (i >= AIRY_LUT_SIZE - 1) return lut[AIRY_LUT_SIZE - 1];
+      const frac = idx - i;
+      return lut[i] + (lut[i + 1] - lut[i]) * frac;
+    }
+
+    function sinc(x) {
+      if (Math.abs(x) < 1e-6) return 1.0;
+      return Math.sin(x) / x;
+    }
+
+    // Exact Fraunhofer wave diffraction field intensity for Newtonian reflector pupil (20% obstruction + 4 orthogonal thin spider vanes)
+    function newtonianAiryIntensity(ux, uy, eps = 0.20, alpha = 0.030, hasSpherical = false) {
+      const u = Math.sqrt(ux * ux + uy * uy);
+      if (u < 1e-10 && !hasSpherical) return 1.0;
+
+      if (hasSpherical) {
+        // Fast O(1) complex field lookup with W040 = 0.3λ phase delay + spider sinc terms
+        let reAiry = 0.0;
+        let imAiry = 0.0;
+        if (u < AIRY_LUT_MAX_U) {
+          const idx = (u / AIRY_LUT_MAX_U) * AIRY_LUT_SIZE;
+          const i = idx | 0;
+          const frac = idx - i;
+          if (i < AIRY_LUT_SIZE - 1) {
+            reAiry = NEWTONIAN_SPHERICAL_RE_LUT[i] + (NEWTONIAN_SPHERICAL_RE_LUT[i + 1] - NEWTONIAN_SPHERICAL_RE_LUT[i]) * frac;
+            imAiry = NEWTONIAN_SPHERICAL_IM_LUT[i] + (NEWTONIAN_SPHERICAL_IM_LUT[i + 1] - NEWTONIAN_SPHERICAL_IM_LUT[i]) * frac;
+          }
+        }
+
+        const sincUx = sinc(ux);
+        const sincUy = sinc(uy);
+        const sincAlphaUx = sinc(alpha * ux);
+        const sincAlphaUy = sinc(alpha * uy);
+
+        const aVane1 = alpha * sincAlphaUx * sincUy;
+        const aVane2 = alpha * sincUx * sincAlphaUy;
+
+        const reTotal = reAiry - (4.0 / Math.PI) * (aVane1 + aVane2);
+        const imTotal = imAiry;
+
+        return reTotal * reTotal + imTotal * imTotal;
+      }
+      
+      const j1_u = besselJ1(u);
+      const val1 = 2.0 * j1_u / u;
+      const uEps = u * eps;
+      const j1_uEps = besselJ1(uEps);
+      const val2 = 2.0 * j1_uEps / uEps;
+      const aAiry = val1 - eps * eps * val2;
+
+      const sincUx = sinc(ux);
+      const sincUy = sinc(uy);
+      const sincAlphaUx = sinc(alpha * ux);
+      const sincAlphaUy = sinc(alpha * uy);
+
+      const aVane1 = alpha * sincAlphaUx * sincUy;
+      const aVane2 = alpha * sincUx * sincAlphaUy;
+
+      const normFactor = 1.0 - eps * eps - (8.0 / Math.PI) * alpha;
+      const psi = (aAiry - (8.0 / Math.PI) * (aVane1 + aVane2)) / normFactor;
+
+      return psi * psi;
+    }
+
     // Parse hex color string to [R, G, B] array (0–255)
     function hexToRgb(hex) {
       hex = hex.replace('#', '');
@@ -2233,8 +2464,14 @@
       const imageData = ctx.createImageData(renderSize, renderSize);
       const data = imageData.data;
 
-      const rayleigh = 138 / aperture; // arcseconds
+      // Permanent Scotopic Wavelength Calibration (λ = 507nm night-adapted rod peak sensitivity)
+      const rayleigh = 127.3 / aperture; // arcseconds (127.3/D)
       const isNight = document.body.classList.contains("night-vision");
+
+      // Select pupil lookup based on Optical Design (Refractor vs SCT/MCT vs Newtonian with spider vanes)
+      const isObstructed = (currentScopeType === 'sct' || currentScopeType === 'newtonian');
+      const lookupFn = isObstructed ? airyObstructedLookup : airyLookup;
+      const hasSpiderVanes = (currentScopeType === 'newtonian');
 
       // Rayleigh distance in canvas pixels (derived from the SVG viewBox/scale coordinate system)
       const viewBoxSize = 170 * (wrapperWidth / 400);
@@ -2262,14 +2499,18 @@
       const flux1 = 1.0;
       const flux2 = Math.max(0.20, Math.pow(10, -0.4 * deltaMag));
 
+      // Spider vane diffraction alpha ratio (balanced sweet spot: clear 4-pointed spikes without overpowering the field)
+      const vaneAlpha1 = Math.min(0.035, 0.022 + Math.max(0, (4.5 - star.mag1) * 0.003));
+      const vaneAlpha2 = Math.min(0.035, 0.022 + Math.max(0, (4.5 - star.mag2) * 0.003));
+
       // Star colors
       const c1 = isNight ? '#ff3333' : star.color1;
       const c2 = isNight ? '#ff3333' : star.color2;
       const rgb1 = hexToRgb(c1);
       const rgb2 = hexToRgb(c2);
 
-      // Logarithmic compression curve for realistic diffraction ring balance
-      // Maps central disk peak to 100%, 1st ring peak to ~18.1%, 2nd ring peak to ~5.6%, 3rd ring peak to ~2.3%, and 4th+ to 0.
+      // Smooth, natural logarithmic tone curve for Airy PSF rendering
+      // Maps peak core to 100%, 1st ring to ~18.1%, 2nd ring to ~5.6%, 3rd ring to ~2.3% with continuous Airy profile
       function logarithmicToneMap(val) {
         if (val <= 0.0008) return 0.0;
         const k = 65.0;
@@ -2319,8 +2560,31 @@
 
             if (d1sq <= maxR2 || d2sq <= maxR2) {
               activeSamples++;
-              if (d1sq <= maxR2) sumI1 += airyLookup(Math.sqrt(d1sq) * airyScale) * flux1;
-              if (d2sq <= maxR2) sumI2 += airyLookup(Math.sqrt(d2sq) * airyScale) * flux2;
+              if (d1sq <= maxR2) {
+                let iStar1;
+                const r1u = Math.sqrt(d1sq) * airyScale;
+                if (currentScopeType === 'newtonian') {
+                  iStar1 = newtonianAiryIntensity(dx1 * airyScale, dy1 * airyScale, 0.20, vaneAlpha1, isSphericalAberrationActive) * flux1;
+                } else if (currentScopeType === 'sct') {
+                  iStar1 = (isSphericalAberrationActive ? airySphericalLookup(r1u, 0.35) : airyObstructedLookup(r1u, 0.35)) * flux1;
+                } else {
+                  iStar1 = (isSphericalAberrationActive ? airySphericalLookup(r1u, 0.00) : airyLookup(r1u)) * flux1;
+                }
+                sumI1 += iStar1;
+              }
+
+              if (d2sq <= maxR2) {
+                let iStar2;
+                const r2u = Math.sqrt(d2sq) * airyScale;
+                if (currentScopeType === 'newtonian') {
+                  iStar2 = newtonianAiryIntensity(dx2 * airyScale, dy2 * airyScale, 0.20, vaneAlpha2, isSphericalAberrationActive) * flux2;
+                } else if (currentScopeType === 'sct') {
+                  iStar2 = (isSphericalAberrationActive ? airySphericalLookup(r2u, 0.35) : airyObstructedLookup(r2u, 0.35)) * flux2;
+                } else {
+                  iStar2 = (isSphericalAberrationActive ? airySphericalLookup(r2u, 0.00) : airyLookup(r2u)) * flux2;
+                }
+                sumI2 += iStar2;
+              }
             }
           }
 
@@ -2334,7 +2598,7 @@
           let gg = i1 * rgb1[1] / 255 + i2 * rgb2[1] / 255;
           let bb = i1 * rgb1[2] / 255 + i2 * rgb2[2] / 255;
 
-          // Apply logarithmic tone map curve
+          // Apply smooth logarithmic tone map curve
           rr = logarithmicToneMap(rr);
           gg = logarithmicToneMap(gg);
           bb = logarithmicToneMap(bb);
@@ -2374,7 +2638,7 @@
       }
 
       const power = aperture * magFactor;
-      const rayleigh = 138 / aperture;
+      const rayleigh = 127.3 / aperture;
       const deltaM = Math.abs(star.mag1 - star.mag2);
       const contrastMultiplier = 1 + (deltaM > 1.5 ? Math.min(2.5, (deltaM - 1.5) * 0.3) : 0);
       
@@ -2529,6 +2793,20 @@
       }
     }
 
+    let currentScopeType = (function() {
+      try {
+        return localStorage.getItem('double_stars_scope_type') || 'refractor';
+      } catch (e) {
+        return 'refractor';
+      }
+    })();
+    let isSphericalAberrationActive = (function() {
+      try {
+        return localStorage.getItem('double_stars_spherical_aberration') === 'true';
+      } catch (e) {
+        return false;
+      }
+    })();
     let isInteractiveZooming = false;
     let zoomDebounceTimer = null;
     let zoomRafPending = false;
@@ -2552,9 +2830,9 @@
         renderAiryCanvas(wrapper, star, userAperture, modalMagFactor, isZooming);
       }
 
-      // Update Modal Stats
+      // Update Modal Stats (Scotopic Rayleigh limit 127.3/D arcsec)
       const dawes = 116 / userAperture;
-      const rayleigh = 138 / userAperture;
+      const rayleigh = 127.3 / userAperture;
       const power = userAperture * modalMagFactor;
 
       const modalTfovSec = (viewBoxSize * rayleigh) / (12.5 * scaleUsed);
@@ -2580,6 +2858,19 @@
       if (zoomBadge) {
         zoomBadge.innerText = `${magFactorStr}x/mm`;
         zoomBadge.style.color = isDeviated ? '#38bdf8' : '#94a3b8';
+      }
+
+      // Sync Optical Design toggle active button state in modal sidebar
+      document.querySelectorAll('#modalScopeTypeToggle .scope-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-scope') === currentScopeType);
+      });
+
+      // Sync Spherical Aberration toggle button state in modal sidebar
+      const sphericalBtn = document.getElementById('modalSphericalToggle');
+      if (sphericalBtn) {
+        sphericalBtn.setAttribute('data-spherical', isSphericalAberrationActive ? 'true' : 'false');
+        sphericalBtn.classList.toggle('active', isSphericalAberrationActive);
+        sphericalBtn.innerText = `0.3 λ Spherical Aberration: ${isSphericalAberrationActive ? 'ON' : 'OFF'}`;
       }
 
       const diff = computeObservingDifficulty(star, userAperture);
@@ -2615,13 +2906,13 @@
       });
     }
 
-    // Smooth 60fps scroll-wheel zoom handler (1x to 5x per mm aperture)
+    // Smooth 60fps scroll-wheel zoom handler (1x to 10x per mm aperture)
     function handleModalWheel(e) {
       if (!currentModalStarId || !userAperture) return;
       e.preventDefault();
       
       let newFactor = modalMagFactor * Math.pow(1.0012, -e.deltaY);
-      newFactor = Math.max(1.0, Math.min(5.0, newFactor));
+      newFactor = Math.max(1.0, Math.min(10.0, newFactor));
       
       if (Math.abs(newFactor - modalMagFactor) > 0.0001) {
         modalMagFactor = newFactor;
@@ -3049,6 +3340,33 @@
         resetBtn.addEventListener('click', () => {
           modalMagFactor = 2.0;
           renderSimulationModal();
+        });
+      }
+
+      document.querySelectorAll('#modalScopeTypeToggle .scope-type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mode = btn.getAttribute('data-scope');
+          if (mode) {
+            currentScopeType = mode;
+            try {
+              localStorage.setItem('double_stars_scope_type', currentScopeType);
+            } catch (e) {}
+            document.querySelectorAll('#modalScopeTypeToggle .scope-type-btn').forEach(b => {
+              b.classList.toggle('active', b.getAttribute('data-scope') === currentScopeType);
+            });
+            if (currentModalStarId) renderSimulationModal();
+          }
+        });
+      });
+
+      const sphericalBtn = document.getElementById('modalSphericalToggle');
+      if (sphericalBtn) {
+        sphericalBtn.addEventListener('click', () => {
+          isSphericalAberrationActive = !isSphericalAberrationActive;
+          try {
+            localStorage.setItem('double_stars_spherical_aberration', isSphericalAberrationActive ? 'true' : 'false');
+          } catch (e) {}
+          if (currentModalStarId) renderSimulationModal();
         });
       }
 
