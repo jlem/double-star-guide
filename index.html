@@ -1293,6 +1293,97 @@
       font-weight: 600;
       margin-bottom: 0.15rem;
     }
+    .sim-star-picker-container {
+      position: relative;
+      display: inline-block;
+      z-index: 1005;
+    }
+    .sim-star-picker-btn {
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+      transition: border-color 0.2s, background-color 0.2s;
+      min-width: 280px;
+      justify-content: space-between;
+    }
+    .sim-star-picker-btn:hover, .sim-star-picker-btn:focus {
+      border-color: var(--accent-primary);
+      outline: none;
+    }
+    .sim-star-picker-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 360px;
+      max-width: 90vw;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+      z-index: 1010;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .sim-star-search-box {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-main);
+    }
+    .sim-star-search-box input {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      width: 100%;
+      outline: none;
+    }
+    .sim-star-options-list {
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 0.35rem 0;
+    }
+    .sim-star-option {
+      padding: 0.5rem 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.15s ease;
+    }
+    .sim-star-option:hover, .sim-star-option.highlighted {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .sim-star-option.selected {
+      background: var(--accent-primary);
+      color: #fff;
+      font-weight: 600;
+    }
+    .sim-star-option-name {
+      font-weight: 600;
+    }
+    .sim-star-option-meta {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+    }
+    .sim-star-option.selected .sim-star-option-meta {
+      color: rgba(255, 255, 255, 0.85);
+    }
     .sim-sidebar-section-title {
       font-size: 0.8rem;
       text-transform: uppercase;
@@ -1523,9 +1614,21 @@
       <div class="sim-modal-header">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Target Star:</span>
-          <select id="simModalStarSelect" class="sim-star-dropdown" style="background: var(--bg-card); color: var(--text-main); font-family: var(--font-heading); font-size: 1.1rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; max-width: 340px; outline: none;">
-            <!-- Populate options dynamically -->
-          </select>
+          <div class="sim-star-picker-container" id="simStarPickerContainer">
+            <div class="sim-star-picker-btn" id="simStarPickerBtn" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+              <span id="simStarPickerLabel" class="sim-star-picker-label">Select Double Star...</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">▼</span>
+            </div>
+            <div class="sim-star-picker-dropdown" id="simStarPickerDropdown" style="display: none;">
+              <div class="sim-star-search-box">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted); flex-shrink: 0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="simStarSearchInput" placeholder="Filter by name, WDS, constellation..." autocomplete="off" />
+              </div>
+              <div class="sim-star-options-list" id="simStarOptionsList" role="listbox">
+                <!-- Dynamically filtered star options -->
+              </div>
+            </div>
+          </div>
         </div>
         <button class="sim-modal-close" id="simModalClose">&times;</button>
       </div>
@@ -2536,8 +2639,9 @@
       const imageData = ctx.createImageData(renderSize, renderSize);
       const data = imageData.data;
 
-      // Permanent Scotopic Wavelength Calibration (λ = 507nm night-adapted rod peak sensitivity)
-      const rayleigh = 127.3 / aperture; // arcseconds (127.3/D)
+      // Permanent Scotopic Wavelength Calibration (λ = 507nm) + 15mm visual resolution bonus for screen perception
+      const effectiveAperture = aperture + 15;
+      const rayleigh = 127.3 / effectiveAperture; // arcseconds (127.3 / (D + 15mm))
       const isNight = document.body.classList.contains("night-vision");
 
       // Select pupil lookup based on Optical Design (Refractor vs SCT/MCT vs Newtonian with spider vanes)
@@ -2545,10 +2649,9 @@
       const lookupFn = isObstructed ? airyObstructedLookup : airyLookup;
       const hasSpiderVanes = (currentScopeType === 'newtonian');
 
-      // Absolute Optical Power (Magnification M in X): Baseline 200x
-      // Holding separation constant at a given magnification across apertures while Airy disks shrink as aperture increases
+      // Absolute Optical Power (Magnification M in X): Baseline 200x (View scale reduced by 25% from original baseline)
       const viewBoxSize = 170 * (wrapperWidth / 400);
-      const scaleUsed = 0.125 * (magPower / 200.0);
+      const scaleUsed = 0.09375 * (magPower / 200.0);
       const arcsecPx = (renderSize * 12.5 * scaleUsed) / viewBoxSize;
       const rayleighPx = rayleigh * arcsecPx;
 
@@ -2790,7 +2893,8 @@
       }
 
       const power = aperture * magFactor;
-      const rayleigh = 127.3 / aperture;
+      const effectiveAperture = aperture + 15;
+      const rayleigh = 127.3 / effectiveAperture;
       const deltaM = Math.abs(star.mag1 - star.mag2);
       const contrastMultiplier = 1 + (deltaM > 1.5 ? Math.min(2.5, (deltaM - 1.5) * 0.3) : 0);
       
@@ -2806,8 +2910,8 @@
       // Compress apparent separation for tight pairs to simulate visual blooming/merging
       const visualSep = sepPixels * Math.min(1.0, Math.pow(sepPixels / 12.5, 0.7));
 
-      // Global scale factor to match physical star image and separation scale (0.125 at 400/170 reference = 0.2941176)
-      const scale = scaleOverride !== null ? scaleOverride : (0.125 * 400 / 170);
+      // Global scale factor to match physical star image and separation scale (0.09375 at 400/170 reference = 25% reduction)
+      const scale = scaleOverride !== null ? scaleOverride : (0.09375 * 400 / 170);
       const scaledVisualSep = visualSep * scale;
 
       const vb = viewBoxSize !== null ? viewBoxSize : 170;
@@ -2861,7 +2965,7 @@
       const op2 = getOpacity(star.mag2);
 
       // Calculate True FOV (TFOV) and Apparent FOV (AFOV) for this viewport
-      const scaleUsed = scaleOverride !== null ? scaleOverride : (0.125 * 400 / 170);
+      const scaleUsed = scaleOverride !== null ? scaleOverride : (0.09375 * 400 / 170);
       const vbUsed = viewBoxSize !== null ? viewBoxSize : 170;
       const tfovSec = (vbUsed * rayleigh) / (12.5 * scaleUsed);
       const tfovMin = tfovSec / 60;
@@ -3030,22 +3134,17 @@
       const star = DOUBLE_STARS_DATA.find(s => s.id === currentModalStarId);
       if (!star) return;
 
-      // Populate and sync target star select dropdown in modal header
-      const starSelect = document.getElementById('simModalStarSelect');
-      if (starSelect) {
-        if (starSelect.options.length === 0) {
-          starSelect.innerHTML = DOUBLE_STARS_DATA.map(s => `<option value="${s.id}">${s.name} (${s.constellation})</option>`).join('');
-        }
-        if (starSelect.value !== currentModalStarId) {
-          starSelect.value = currentModalStarId;
-        }
+      // Populate and sync target star picker label in modal header
+      const pickerLabel = document.getElementById('simStarPickerLabel');
+      if (pickerLabel && star) {
+        pickerLabel.innerText = `${star.name} (${star.constellation})`;
       }
 
       const wrapper = document.getElementById('simModalSvgWrapper');
       const wrapperWidth = wrapper ? (wrapper.clientWidth || wrapper.getBoundingClientRect().width || 400) : 400;
-      // Absolute Optical Power (Magnification M in X): 200x baseline
+      // Absolute Optical Power (Magnification M in X): 200x baseline (View scale reduced by 25%)
       const viewBoxSize = 170 * (wrapperWidth / 400);
-      const scaleUsed = 0.125 * (currentModalPower / 200.0);
+      const scaleUsed = 0.09375 * (currentModalPower / 200.0);
 
       // Render physics-based Airy PSF on canvas (replaces SVG for the modal)
       if (wrapper) {
@@ -3614,16 +3713,123 @@
         modalMain.addEventListener('wheel', handleModalWheel, { passive: false });
       }
 
-      const starSelect = document.getElementById('simModalStarSelect');
-      if (starSelect) {
-        starSelect.addEventListener('change', (e) => {
-          const selectedId = e.target.value;
-          if (selectedId) {
-            currentModalStarId = selectedId;
-            renderSimulationModal();
+      // Interactive Fuzzy Search Star Picker Component
+      function populateSimStarPickerOptions(filterQuery = '') {
+        const listEl = document.getElementById('simStarOptionsList');
+        if (!listEl) return;
+
+        const filtered = DOUBLE_STARS_DATA.filter(star => {
+          if (!filterQuery || !filterQuery.trim()) return true;
+          const q = filterQuery.toLowerCase().trim();
+          const text = [
+            star.name,
+            star.constellation,
+            star.wds,
+            star.catalog,
+            star.id,
+            `${star.sep}"`
+          ].filter(Boolean).join(' ').toLowerCase();
+          return q.split(/\s+/).every(term => text.includes(term));
+        });
+
+        if (filtered.length === 0) {
+          listEl.innerHTML = `<div style="padding: 0.85rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">No matching double stars found</div>`;
+          return;
+        }
+
+        listEl.innerHTML = filtered.map(s => {
+          const isSelected = s.id === currentModalStarId;
+          const catalogStr = s.wds || s.catalog || s.constellation;
+          return `
+            <div class="sim-star-option ${isSelected ? 'selected' : ''}" data-star-id="${s.id}">
+              <span class="sim-star-option-name">${s.name}</span>
+              <span class="sim-star-option-meta">${catalogStr} • ${s.sep}"</span>
+            </div>
+          `;
+        }).join('');
+
+        listEl.querySelectorAll('.sim-star-option').forEach(item => {
+          item.addEventListener('click', () => {
+            const starId = item.getAttribute('data-star-id');
+            if (starId) {
+              currentModalStarId = starId;
+              closeSimStarPickerDropdown();
+              renderSimulationModal();
+            }
+          });
+        });
+      }
+
+      function toggleSimStarPickerDropdown() {
+        const dropdown = document.getElementById('simStarPickerDropdown');
+        const btn = document.getElementById('simStarPickerBtn');
+        const modalSearchInput = document.getElementById('simStarSearchInput');
+        if (!dropdown) return;
+
+        const isVisible = dropdown.style.display !== 'none';
+        if (isVisible) {
+          closeSimStarPickerDropdown();
+        } else {
+          dropdown.style.display = 'flex';
+          btn.setAttribute('aria-expanded', 'true');
+          populateSimStarPickerOptions();
+          if (modalSearchInput) {
+            modalSearchInput.value = '';
+            setTimeout(() => modalSearchInput.focus(), 50);
+          }
+        }
+      }
+
+      function closeSimStarPickerDropdown() {
+        const dropdown = document.getElementById('simStarPickerDropdown');
+        const btn = document.getElementById('simStarPickerBtn');
+        if (dropdown) dropdown.style.display = 'none';
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+
+      const pickerBtn = document.getElementById('simStarPickerBtn');
+      if (pickerBtn) {
+        pickerBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleSimStarPickerDropdown();
+        });
+        pickerBtn.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            toggleSimStarPickerDropdown();
           }
         });
       }
+
+      const modalSearchInput = document.getElementById('simStarSearchInput');
+      if (modalSearchInput) {
+        modalSearchInput.addEventListener('click', (e) => e.stopPropagation());
+        modalSearchInput.addEventListener('input', (e) => {
+          populateSimStarPickerOptions(e.target.value);
+        });
+        modalSearchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            closeSimStarPickerDropdown();
+          } else if (e.key === 'Enter') {
+            const firstOption = document.querySelector('.sim-star-option');
+            if (firstOption) {
+              const starId = firstOption.getAttribute('data-star-id');
+              if (starId) {
+                currentModalStarId = starId;
+                closeSimStarPickerDropdown();
+                renderSimulationModal();
+              }
+            }
+          }
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        const container = document.getElementById('simStarPickerContainer');
+        if (container && !container.contains(e.target)) {
+          closeSimStarPickerDropdown();
+        }
+      });
 
       const resetBtn = document.getElementById('simZoomResetBtn');
       if (resetBtn) {
