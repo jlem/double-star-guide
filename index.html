@@ -2592,9 +2592,8 @@
       const imageData = ctx.createImageData(renderSize, renderSize);
       const data = imageData.data;
 
-      // Permanent Scotopic Wavelength Calibration (λ = 507nm) + 15mm visual resolution bonus for screen perception
-      const effectiveAperture = aperture + 15;
-      const rayleigh = 127.3 / effectiveAperture; // arcseconds (127.3 / (D + 15mm))
+      // Permanent Scotopic Wavelength Calibration (λ = 507nm)
+      const rayleigh = 127.3 / aperture; // arcseconds (127.3 / D)
       const isNight = document.body.classList.contains("night-vision");
 
       // Select pupil lookup based on Optical Design (Refractor vs SCT/MCT vs Newtonian with spider vanes)
@@ -2629,8 +2628,8 @@
       const baseFlux1 = Math.max(0.008, Math.pow(10, -0.4 * (star.mag1 - 0.1) * 0.35));
       const baseFlux2 = Math.max(0.008, Math.pow(10, -0.4 * (star.mag2 - 0.1) * 0.35));
 
-      const apFloor = 0.30;
-      const apExponent = 1.20;
+      const apFloor = 0.40;
+      const apExponent = 0.60;
       const apPower = apFloor + (2.50 - apFloor) * Math.pow(Math.max(0, aperture - 50) / 150.0, apExponent);
 
       let flux1 = baseFlux1 * apPower;
@@ -2646,8 +2645,8 @@
         const eta1 = Math.min(1.0, iThreshold / baseFlux1);
         const eta2 = Math.min(1.0, iThreshold / baseFlux2);
 
-        widthFactor1 = Math.min(1.0, Math.max(0.35, (1.0 - 0.55 * Math.sqrt(eta1))));
-        widthFactor2 = Math.min(1.0, Math.max(0.35, (1.0 - 0.55 * Math.sqrt(eta2))));
+        widthFactor1 = Math.min(1.0, Math.max(0.35, (1.0 - 0.56 * Math.sqrt(eta1))));
+        widthFactor2 = Math.min(1.0, Math.max(0.35, (1.0 - 0.56 * Math.sqrt(eta2))));
       } else {
         // When Brightness Perception is OFF: normalized relative scaling for primary star
         flux1 = 1.0;
@@ -2826,7 +2825,13 @@
           const i1 = sumI1 / sampleCount;
           const i2 = sumI2 / sampleCount;
 
-          const brightnessGain = 1.0;
+          // Aperture-dependent linear brightness boost (when Brightness Perception is ON)
+          // 50mm = 0% boost, 200mm = +150% boost (default multiplier 1.0)
+          let brightnessGain = 1.0;
+          if (isBrightnessPerceptionActive) {
+            const apBoostFrac = Math.max(0, Math.min(1, (aperture - 50) / 150.0));
+            brightnessGain = 1.0 + (1.50 * apBoostFrac);
+          }
 
           // Per-channel physical light flux
           let rr = (i1 * rgb1[0] / 255 + i2 * rgb2[0] / 255) * brightnessGain;
@@ -2873,8 +2878,7 @@
       }
 
       const power = aperture * magFactor;
-      const effectiveAperture = aperture + 15;
-      const rayleigh = 127.3 / effectiveAperture;
+      const rayleigh = 127.3 / aperture;
       const deltaM = Math.abs(star.mag1 - star.mag2);
       const contrastMultiplier = 1 + (deltaM > 1.5 ? Math.min(2.5, (deltaM - 1.5) * 0.3) : 0);
       

@@ -1,1 +1,5 @@
 # Ignore JSON data files
+
+# Tuner page
+tuner.html
+double_stars_catalog.bak
