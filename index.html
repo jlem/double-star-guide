@@ -1337,6 +1337,8 @@
       box-sizing: border-box;
     }
     .sim-modal-svg-wrapper {
+      width: 100%;
+      height: 100%;
       max-width: 100%;
       max-height: 100%;
       aspect-ratio: 1 / 1;
@@ -2506,9 +2508,15 @@
       // Enforce strict 1:1 square aspect ratio based on smallest bounding dimension
       const displaySize = Math.max(100, Math.round(Math.min(wrapperWidth, wrapperHeight)));
       
-      // High-DPI Resolution Scaling (2x Device Pixel Ratio for Retina/Crisp rendering)
-      const dpr = Math.max(2, window.devicePixelRatio || 2);
-      const renderSize = Math.round(displaySize * dpr);
+      // High-DPI & Dynamic 60fps Turbulence Animation Scaling:
+      // Active turbulence animation uses a high-performance buffer (0.50x - 0.65x) stretched to full CSS displaySize
+      let animScale = 1.0;
+      if (isTurbulenceActive) {
+        animScale = (isInteractiveZooming || magPower >= 300) ? 0.50 : 0.65;
+      } else {
+        animScale = Math.max(2, window.devicePixelRatio || 2);
+      }
+      const renderSize = Math.max(160, Math.round(displaySize * animScale));
 
       let canvas = wrapper.querySelector('canvas');
       if (!canvas) {
@@ -2517,11 +2525,11 @@
       wrapper.innerHTML = '';
       wrapper.appendChild(canvas);
 
-      // Set internal render resolution (high-DPI) and CSS display size (1:1 square)
+      // Internal render resolution & fixed 1:1 CSS display size matching the circular viewport
       canvas.width = renderSize;
       canvas.height = renderSize;
-      canvas.style.width = '100%';
-      canvas.style.height = '100%';
+      canvas.style.width = displaySize + 'px';
+      canvas.style.height = displaySize + 'px';
       canvas.style.objectFit = 'contain';
 
       const ctx = canvas.getContext('2d');
