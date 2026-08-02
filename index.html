@@ -2632,10 +2632,11 @@
 
       // Unified Perceptual magnitude flux scaling
       // Brightness Perception ON
-      const onBaseExp = 0.48;
-      const onMagExp = 0.95;
+      const onBaseExp = 0.47;
+      const onMagExp = 0.85;
       const onApExp = 0.50;
       const onApBoost = 2.00;
+      const onRingK = 116.0;
       const onUseApFloor = false;
       const onApFloor = 0.40;
       const onUseIThreshold = true;
@@ -2648,6 +2649,7 @@
       const offMagExp = 0.85;
       const offApExp = 0.00;
       const offApBoost = 0.25;
+      const offRingK = 44.0;
       const offUseApFloor = false;
       const offApFloor = 0.40;
       const offUseIThreshold = false;
@@ -2784,11 +2786,13 @@
         }
       }
 
+      const activeRingK = isBrightnessPerceptionActive ? onRingK : offRingK;
+
       // Smooth, natural logarithmic tone curve for Airy PSF rendering
       // Maps peak core to 100%, 1st ring to ~15.0%, 2nd ring to ~4.2%, 3rd ring to ~1.7% with continuous Airy profile
       function logarithmicToneMap(val) {
         if (val <= 0.0008) return 0.0;
-        const k = 44.0;
+        const k = activeRingK;
         const compressed = Math.log(1.0 + k * val) / Math.log(1.0 + k);
         return Math.min(1.0, Math.max(0.0, compressed));
       }
