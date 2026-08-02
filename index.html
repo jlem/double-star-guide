@@ -2732,7 +2732,8 @@
           const speckleSpread = 0.35 * ratio * rayleighPx;
           // Power-law Turbulence Gain: Dynamically compensates for 128-speckle energy dispersion at large apertures (up to 600mm) under heavy seeing (up to 8")
           const turbulenceGain = 1.0 + 0.16 * Math.pow(ratio, 0.60);
-          const mainWeight = Math.max(0.04, 1.2 - 0.20 * ratio) * turbulenceGain;
+          // Core Floor (0.22): Preserves a persistent solid central core anchor even under severe speckle breakdown
+          const mainWeight = Math.max(0.22, 1.2 - 0.20 * ratio) * turbulenceGain;
           const subWeight = ((1.05 * (1.0 - (mainWeight / turbulenceGain))) / Math.pow(numSpeckles - 1, 0.82)) * turbulenceGain;
 
           // Fast pseudo-random hash generator for 100% chaotic non-spiral boiling motion
