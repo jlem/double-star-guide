@@ -1700,9 +1700,9 @@
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.725rem; color: var(--text-muted); margin-top: 0.2rem;">
                   <span>Large cell intensity:</span>
-                  <strong id="modalTurbulenceMacroVal" style="color: var(--text-main); font-family: var(--font-mono);">30%</strong>
+                  <strong id="modalTurbulenceMacroVal" style="color: var(--text-main); font-family: var(--font-mono);">20%</strong>
                 </div>
-                <input type="range" id="modalTurbulenceMacroSlider" min="0" max="200" step="10" value="30" style="width: 100%; cursor: pointer;">
+                <input type="range" id="modalTurbulenceMacroSlider" min="0" max="200" step="10" value="20" style="width: 100%; cursor: pointer;">
 
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.725rem; color: var(--text-muted); margin-top: 0.2rem;">
                   <span>Small cell intensity:</span>
@@ -3081,9 +3081,9 @@
     let turbulenceMacroMultiplier = (function() {
       try {
         const val = parseFloat(sessionStorage.getItem('double_stars_turbulence_macro'));
-        return (!isNaN(val) && val >= 0.0 && val <= 2.0) ? val : 0.30;
+        return (!isNaN(val) && val >= 0.0 && val <= 2.0) ? val : 0.20;
       } catch (e) {
-        return 0.30;
+        return 0.20;
       }
     })();
     let turbulenceSeeingArcsec = (function() {
