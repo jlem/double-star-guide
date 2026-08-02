@@ -1677,14 +1677,14 @@
           <div class="sim-panel">
             <div class="sim-panel-title">🌀 Modifiers</div>
             <div class="filter-group">
-              <button class="scope-type-btn" id="modalSphericalToggle" data-spherical="false" title="Toggle 0.3 waves of primary spherical aberration">
+              <button class="scope-type-btn" id="modalBrightnessToggle" data-brightness="false" title="Simulate physical aperture light gathering power & visual brightness perception">
+                Brightness Perception: OFF
+              </button>
+              <button class="scope-type-btn" id="modalSphericalToggle" data-spherical="false" style="margin-top: 0.4rem;" title="Toggle 0.3 waves of primary spherical aberration">
                 0.3 λ Spherical Aberration: OFF
               </button>
               <button class="scope-type-btn" id="modalTurbulenceToggle" data-turbulence="false" style="margin-top: 0.4rem;" title="Simulate dynamic Kolmogorov atmospheric turbulence">
                 Atmospheric Turbulence: OFF
-              </button>
-              <button class="scope-type-btn" id="modalBrightnessToggle" data-brightness="false" style="margin-top: 0.4rem;" title="Simulate physical aperture light gathering power & visual brightness perception">
-                Brightness Perception: OFF
               </button>
               
               <div id="modalTurbulenceControlsGroup" style="margin-top: 0.5rem; display: none; flex-direction: column; gap: 0.4rem; background: var(--bg-main); padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);">
@@ -1712,12 +1712,12 @@
 
         <!-- CENTER AREA: Simulation Viewport (FOV Canvas) -->
         <div class="sim-modal-main" id="simModalMain">
-          <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper" title="Use scroll wheel to zoom (50x to 2000x magnification)">
+          <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper" title="Use scroll wheel to zoom">
             <!-- Canvas rendered here -->
           </div>
           <div class="sim-zoom-controls" id="simZoomControls">
-            <span class="sim-zoom-badge" id="simZoomBadge">200x</span>
-            <button class="sim-zoom-reset-btn" id="simZoomResetBtn" style="display: none;" title="Reset magnification to default 200x">
+            <span class="sim-zoom-badge" id="simZoomBadge">250x</span>
+            <button class="sim-zoom-reset-btn" id="simZoomResetBtn" style="display: none;" title="Reset magnification to default 250x">
               ↺ Reset Zoom
             </button>
           </div>
@@ -2556,7 +2556,7 @@
     }
 
     // Render physics-based Airy PSF on a canvas element inside the given wrapper
-    function renderAiryCanvas(wrapper, star, aperture, magPower = 200, isInteractiveZooming = false) {
+    function renderAiryCanvas(wrapper, star, aperture, magPower = 250, isInteractiveZooming = false) {
       const rect = wrapper ? wrapper.getBoundingClientRect() : { width: 400, height: 400 };
       const wrapperWidth = rect.width || wrapper.clientWidth || 400;
       const wrapperHeight = rect.height || wrapper.clientHeight || wrapperWidth;
@@ -3032,7 +3032,7 @@
 
     // Modal Controller logic
     let modalResizeObserver = null;
-    let currentModalPower = 200.0; // Absolute optical power (magnification M in X): 200x default
+    let currentModalPower = 250.0; // Absolute optical power (magnification M in X): 250x default
 
     let currentScopeType = (function() {
       try {
@@ -3116,7 +3116,7 @@
     function openSimulationModal(starId) {
       if (!userAperture) return;
       currentModalStarId = starId;
-      currentModalPower = 200.0; // Reset to default 200x magnification
+      currentModalPower = 250.0; // Reset to default 250x magnification
       document.getElementById('simModalBackdrop').classList.add('active');
       document.getElementById('simModal').classList.add('active');
       const modalApertureInput = document.getElementById('modalApertureInput');
@@ -3159,6 +3159,11 @@
       const star = DOUBLE_STARS_DATA.find(s => s.id === currentModalStarId);
       if (!star) return;
 
+      const maxPower = userAperture * 5.0;
+      if (currentModalPower > maxPower) {
+        currentModalPower = maxPower;
+      }
+
       // Populate and sync target star picker label in modal header
       const pickerLabel = document.getElementById('simStarPickerLabel');
       if (pickerLabel && star) {
@@ -3166,6 +3171,10 @@
       }
 
       const wrapper = document.getElementById('simModalSvgWrapper');
+      if (wrapper) {
+        const maxMag = Math.round(userAperture * 5.0);
+        wrapper.setAttribute('title', `Use scroll wheel to zoom (50x to ${maxMag}x magnification)`);
+      }
       const wrapperWidth = wrapper ? (wrapper.clientWidth || wrapper.getBoundingClientRect().width || 400) : 400;
       // Absolute Optical Power (Magnification M in X): 200x baseline (View scale reduced by 25%)
       const viewBoxSize = 170 * (wrapperWidth / 400);
@@ -3198,12 +3207,12 @@
       document.getElementById('modalSepVal').innerText = (typeof star.sep === 'number' ? star.sep.toFixed(2) : star.sep) + '"';
 
       // Update Reset Zoom button visibility & Zoom badge
-      const isDeviated = Math.abs(currentModalPower - 200.0) > 1.0;
+      const isDeviated = Math.abs(currentModalPower - 250.0) > 1.0;
       const resetBtn = document.getElementById('simZoomResetBtn');
       const zoomBadge = document.getElementById('simZoomBadge');
       if (resetBtn) {
         resetBtn.style.display = isDeviated ? 'inline-flex' : 'none';
-        resetBtn.setAttribute('title', 'Reset magnification to default 200x');
+        resetBtn.setAttribute('title', 'Reset magnification to default 250x');
       }
       if (zoomBadge) {
         zoomBadge.innerText = `${Math.round(power)}x (${xPerMm}x/mm)`;
@@ -3284,13 +3293,14 @@
       });
     }
 
-    // Smooth 60fps scroll-wheel zoom handler (50x to 2000x total magnification power)
+    // Smooth 60fps scroll-wheel zoom handler (50x to 5x per mm of aperture)
     function handleModalWheel(e) {
       if (!currentModalStarId || !userAperture) return;
       e.preventDefault();
       
+      const maxPower = userAperture * 5.0;
       let newPower = currentModalPower * Math.pow(1.0012, -e.deltaY);
-      newPower = Math.max(50.0, Math.min(2000.0, newPower));
+      newPower = Math.max(50.0, Math.min(maxPower, newPower));
       
       if (Math.abs(newPower - currentModalPower) > 0.05) {
         currentModalPower = newPower;
@@ -3835,7 +3845,7 @@
       const resetBtn = document.getElementById('simZoomResetBtn');
       if (resetBtn) {
         resetBtn.addEventListener('click', () => {
-          currentModalPower = 200.0;
+          currentModalPower = 250.0;
           renderSimulationModal();
         });
       }
