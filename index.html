@@ -2632,10 +2632,6 @@
       const onApFloor = 0.40;
       const onUseIThreshold = true;
       const onThreshold = 0.005;
-      const onUseWidthScale = true;
-      const onWidthScale = 0.66;
-      const onUseWidthMin = false;
-      const onWidthMin = 0.15;
       const onUseFluxFloor = true;
       const onFluxFloor = 0.015;
 
@@ -2648,10 +2644,6 @@
       const offApFloor = 0.40;
       const offUseIThreshold = false;
       const offThreshold = 0.025;
-      const offUseWidthScale = false;
-      const offWidthScale = 0.56;
-      const offUseWidthMin = false;
-      const offWidthMin = 0.35;
       const offUseFluxFloor = false;
       const offFluxFloor = 0.04;
 
@@ -2665,12 +2657,6 @@
       
       const activeUseIThreshold = isBrightnessPerceptionActive ? onUseIThreshold : offUseIThreshold;
       const activeThresholdVal = isBrightnessPerceptionActive ? onThreshold : offThreshold;
-      
-      const activeUseWidthScale = isBrightnessPerceptionActive ? onUseWidthScale : offUseWidthScale;
-      const activeWidthScaleVal = isBrightnessPerceptionActive ? onWidthScale : offWidthScale;
-      
-      const activeUseWidthMin = isBrightnessPerceptionActive ? onUseWidthMin : offUseWidthMin;
-      const activeWidthMinVal = isBrightnessPerceptionActive ? onWidthMin : offWidthMin;
       
       const activeUseFluxFloor = isBrightnessPerceptionActive ? onUseFluxFloor : offUseFluxFloor;
       const activeFluxFloorVal = isBrightnessPerceptionActive ? onFluxFloor : offFluxFloor;
@@ -2688,8 +2674,9 @@
       const eta1 = Math.min(1.0, activeThreshold / baseFlux1);
       const eta2 = Math.min(1.0, activeThreshold / baseFlux2);
 
-      const activeWidthMin = activeUseWidthMin ? activeWidthMinVal : 0.00;
-      const activeWidthScale = activeUseWidthScale ? activeWidthScaleVal : 0.00;
+      const apFrac = Math.max(0, aperture - 50) / 150.0;
+      const activeWidthScale = isBrightnessPerceptionActive ? (0.65 - (0.50 * apFrac)) : 0.00;
+      const activeWidthMin = isBrightnessPerceptionActive ? 0.15 : 0.00;
 
       const widthFactor1 = Math.min(1.0, Math.max(activeWidthMin, (1.0 - activeWidthScale * Math.sqrt(eta1))));
       const widthFactor2 = Math.min(1.0, Math.max(activeWidthMin, (1.0 - activeWidthScale * Math.sqrt(eta2))));
