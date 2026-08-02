@@ -581,23 +581,28 @@
       background-color: rgba(59, 130, 246, 0.04);
     }
 
-    /* Difficulty Badge Chips in Table */
-    .difficulty-badge, .difficulty-pill {
+    /* Appearance Badge Chips in Table */
+    .appearance-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.15rem 0.45rem;
-      border-radius: 12px;
-      font-size: 0.725rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 8px;
+      font-size: 0.775rem;
       font-weight: 700;
       white-space: nowrap;
       border: 1px solid currentColor;
       cursor: help;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .appearance-badge:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
-    .double-stars-table th[data-sort="difficulty"],
+    .double-stars-table th[data-sort="appearance"],
     .double-stars-table td:nth-child(8) {
-      width: 85px;
+      width: 105px;
       padding-left: 0.25rem;
       padding-right: 0.25rem;
       text-align: center;
@@ -1668,15 +1673,18 @@
             </div>
           </div>
 
-          <!-- PANEL 2: Aberrations & Atmosphere -->
+          <!-- PANEL 2: Modifiers (Spherical Aberration, Turbulence, Brightness Perception) -->
           <div class="sim-panel">
-            <div class="sim-panel-title">🌀 Aberrations</div>
+            <div class="sim-panel-title">🌀 Modifiers</div>
             <div class="filter-group">
               <button class="scope-type-btn" id="modalSphericalToggle" data-spherical="false" title="Toggle 0.3 waves of primary spherical aberration">
                 0.3 λ Spherical Aberration: OFF
               </button>
               <button class="scope-type-btn" id="modalTurbulenceToggle" data-turbulence="false" style="margin-top: 0.4rem;" title="Simulate dynamic Kolmogorov atmospheric turbulence">
                 Atmospheric Turbulence: OFF
+              </button>
+              <button class="scope-type-btn" id="modalBrightnessToggle" data-brightness="false" style="margin-top: 0.4rem;" title="Simulate physical aperture light gathering power & visual brightness perception">
+                Brightness Perception: OFF
               </button>
               
               <div id="modalTurbulenceControlsGroup" style="margin-top: 0.5rem; display: none; flex-direction: column; gap: 0.4rem; background: var(--bg-main); padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);">
@@ -1726,13 +1734,6 @@
               <div class="readout-item"><span>Dawes:</span> <strong id="modalDawesVal">—</strong></div>
               <div class="readout-item"><span>Rayleigh:</span> <strong id="modalRayleighVal">—</strong></div>
               <div class="readout-item"><span>Separation:</span> <strong id="modalSepVal">—</strong></div>
-              <div class="readout-item" id="modalDifficultyWrapper">
-                <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
-                  Difficulty
-                  <span class="help-icon" id="modalDifficultyHelpIcon" title="">?</span>
-                </span>
-                <strong id="modalDifficultyVal">—</strong>
-              </div>
               <div class="readout-item" id="modalAppearanceWrapper"><span>Appearance:</span> <strong id="modalAppearanceVal">—</strong></div>
             </div>
           </div>
@@ -1888,8 +1889,7 @@
             <th data-sort="mag1" class="active-sort">Magnitudes <span class="sort-arrow" id="arrow-mag1">▲</span></th>
             <th data-sort="delta">&Delta; Mag <span class="sort-arrow" id="arrow-delta">▲</span></th>
             <th data-sort="sep">Separation (") <span class="sort-arrow" id="arrow-sep">▲</span></th>
-            <th data-sort="difficulty">Difficulty <span class="sort-arrow" id="arrow-difficulty">▲</span></th>
-            <th data-sort="appearance" id="thAppearance" style="display: none;">Appearance <span class="sort-arrow" id="arrow-appearance">▲</span></th>
+            <th data-sort="appearance" id="thAppearance">Appearance <span class="sort-arrow" id="arrow-appearance">▲</span></th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -2077,7 +2077,7 @@
     const dawesVal = document.getElementById("dawesVal");
     const rayleighVal = document.getElementById("rayleighVal");
     const powerVal = document.getElementById("powerVal");
-    const thDifficulty = document.getElementById("thDifficulty");
+    const thAppearance = document.getElementById("thAppearance");
 
     // Drawer Elements
     const guideToggleBtn = document.getElementById("guideToggleBtn");
@@ -2123,7 +2123,7 @@
     // Initialize App & Load Data from double_stars_catalog.json
     async function init() {
       try {
-        const response = await fetch("double_stars_catalog.json");
+        const response = await fetch("double_stars_catalog.json?v=" + Date.now(), { cache: "no-store" });
         if (!response.ok) throw new Error("Failed to load catalog JSON");
         DOUBLE_STARS_DATA = await response.json();
       } catch (err) {
@@ -2190,66 +2190,7 @@
       }
     }
 
-    // Compute Eyepiece Observing Difficulty (Easy, Moderate, Hard)
-    function computeObservingDifficulty(star, aperture) {
-      const ap = aperture || 60;
-      const rayleigh = 127.3 / ap;
-      const deltaM = Math.abs(star.mag1 - star.mag2);
-      const m1 = star.mag1;
-      const m2 = star.mag2;
-      const sep = star.sep;
 
-      const ratio = sep / rayleigh;
-
-      // 1. Angular Separation (70% weight) - Scale 0 to 4
-      let sepScore = 0;
-      if (ratio < 0.85) sepScore = 4.0;
-      else if (ratio < 1.25) sepScore = 3.0;
-      else if (ratio < 2.0) sepScore = 2.0;
-      else if (ratio < 3.0) sepScore = 1.0;
-      else sepScore = 0.0;
-
-      // 2. Magnitude Delta (15% weight) - Scale 0 to 3
-      let deltaScore = 0;
-      if (deltaM >= 4.5) deltaScore = 3.0;
-      else if (deltaM >= 3.0) deltaScore = 2.0;
-      else if (deltaM >= 1.5) deltaScore = 1.0;
-
-      // 3. Component Magnitudes (10% weight) - Scale 0 to 2
-      let magScore = 0;
-      if (m1 <= 2.0 && sep < 12.0) magScore += 1.0; // Primary glare
-      if (m2 >= 9.5) magScore += 1.0;             // Faint companion
-
-      // Weighted Total Score
-      const totalScore = (0.70 * sepScore) + (0.15 * deltaScore) + (0.10 * magScore);
-
-      let label, level, color, bg, border, reason;
-
-      if (totalScore < 1.1) {
-        label = "Easy";
-        level = 1;
-        color = "#4ade80";
-        bg = "rgba(74, 222, 128, 0.15)";
-        border = "rgba(74, 222, 128, 0.35)";
-        reason = `Easy: Generous separation (${sep}") makes this accessible in a ${ap}mm scope.`;
-      } else if (totalScore < 2.1) {
-        label = "Moderate";
-        level = 2;
-        color = "#fbbf24";
-        bg = "rgba(251, 191, 36, 0.15)";
-        border = "rgba(251, 191, 36, 0.35)";
-        reason = `Moderate: ${sep < 3.0 ? 'Tight separation (' + sep + '")' : 'Magnitude contrast (Δm=' + deltaM.toFixed(1) + ')'} requires steady seeing in a ${ap}mm scope.`;
-      } else {
-        label = "Hard";
-        level = 3;
-        color = "#ef4444";
-        bg = "rgba(239, 68, 68, 0.15)";
-        border = "rgba(239, 68, 68, 0.35)";
-        reason = `Hard: High difficulty due to ${sep < 2.0 ? 'very tight separation (' + sep + '")' : 'high magnitude contrast (Δm=' + deltaM.toFixed(1) + ')'} in a ${ap}mm scope.`;
-      }
-
-      return { label, level, color, bg, border, reason, score: totalScore };
-    }
 
     // Compute Eyepiece Visual Appearance (Unresolved, Elongated, Notched, Split, Separated)
     function computeAppearance(star, aperture) {
@@ -2259,27 +2200,39 @@
       const deltaM = Math.abs(star.mag1 - star.mag2);
       const ratio = star.sep / rayleigh;
 
+      // Delta-M dependent classification thresholds
+      // Co-equal stars (deltaM = 0):
+      // Unresolved only if ratio < 0.20 (centroids within a couple pixels)
+      // Elongated: 0.20 <= ratio < 0.70
+      // Notched: 0.70 <= ratio < 0.95
+      // Split: 0.95 <= ratio < 1.60
+      // Separated: ratio >= 1.60
+      const tUnresolved = 0.20 + 0.12 * Math.min(4.0, deltaM);
+      const tElongated  = 0.70 + 0.08 * Math.min(4.0, deltaM);
+      const tNotched    = 0.95 + 0.10 * Math.min(4.0, deltaM);
+      const tSplit      = 1.60 + 0.15 * Math.min(4.0, deltaM);
+
       let label, level, color, bg, icon, reason;
 
-      if (ratio < 0.65) {
+      if (ratio < tUnresolved) {
         label = "Unresolved";
         level = 5;
         color = "#ef4444";
         bg = "rgba(239, 68, 68, 0.15)";
         reason = `${star.name}: Unresolved in ${aperture}mm. Appears as a single star.`;
-      } else if (ratio < 0.90) {
+      } else if (ratio < tElongated) {
         label = "Elongated";
         level = 4;
         color = "#f97316";
         bg = "rgba(249, 115, 22, 0.15)";
         reason = `${star.name}: Elongated in ${aperture}mm. Appears as an elongated star (oval).`;
-      } else if (ratio < 1.20) {
+      } else if (ratio < tNotched) {
         label = "Notched";
         level = 3;
         color = "#fbbf24";
         bg = "rgba(251, 191, 36, 0.15)";
         reason = `${star.name}: Notched in ${aperture}mm. Two overlapping spurious disks with a waist notch.`;
-      } else if (ratio < 2.00) {
+      } else if (ratio < tSplit) {
         label = "Split";
         level = 2;
         color = "#a3e635";
@@ -2670,11 +2623,32 @@
       const sx2 = cx + halfSep * Math.cos(angleRad);
       const sy2 = cy + halfSep * Math.sin(angleRad);
 
-      // Primary star renders at full 1.0 peak brightness (no absolute magnitude or aperture dimming).
-      // Secondary star relative flux is based on delta-magnitude difference (min 0.20 for visibility).
+      // Primary star renders at full 1.0 peak brightness.
+      // Secondary star relative flux is based on delta-magnitude difference.
       const deltaMag = star.mag2 - star.mag1;
-      const flux1 = 1.0;
-      const flux2 = Math.max(0.20, Math.pow(10, -0.4 * deltaMag));
+      let flux1 = 1.0;
+      let flux2 = Math.max(0.04, Math.pow(10, -0.4 * deltaMag * 0.65));
+
+      // Magnitude & Aperture-Dependent Visual Threshold Cutoff (when Brightness Perception modifier is ON)
+      // Bright stars (m <= 1.0) exceed threshold down to base (100% width).
+      // Faint companions (m >= 6.5) exceed threshold only near narrow summit tip (35%-50% width),
+      // rendering a tiny, pinprick-like spurious disk dot in small apertures.
+      let widthFactor1 = 1.0;
+      let widthFactor2 = 1.0;
+
+      if (isBrightnessPerceptionActive) {
+        const apPower = Math.pow(aperture / 100.0, 0.55);
+        const iThreshold = 0.025;
+
+        const peakFlux1 = 1.0 * apPower;
+        const peakFlux2 = flux2 * apPower;
+
+        const eta1 = Math.min(1.0, iThreshold / peakFlux1);
+        const eta2 = Math.min(1.0, iThreshold / peakFlux2);
+
+        widthFactor1 = Math.min(1.0, Math.max(0.40, (1.0 - 0.55 * Math.sqrt(eta1))));
+        widthFactor2 = Math.min(1.0, Math.max(0.35, (1.0 - 0.55 * Math.sqrt(eta2))));
+      }
 
       // Spider vane diffraction alpha ratio (balanced sweet spot: clear 4-pointed spikes without overpowering the field)
       const vaneAlpha1 = Math.min(0.035, 0.022 + Math.max(0, (4.5 - star.mag1) * 0.003));
@@ -2816,9 +2790,9 @@
                 activeSamples++;
                 if (d1sq <= maxR2) {
                   let iStar1;
-                  const r1u = Math.sqrt(d1sq) * airyScale;
+                  const r1u = (Math.sqrt(d1sq) * airyScale) / widthFactor1;
                   if (currentScopeType === 'newtonian') {
-                    iStar1 = newtonianAiryIntensity(dx1 * airyScale, dy1 * airyScale, 0.20, vaneAlpha1, isSphericalAberrationActive) * flux1 * sp.weight;
+                    iStar1 = newtonianAiryIntensity((dx1 * airyScale) / widthFactor1, (dy1 * airyScale) / widthFactor1, 0.20, vaneAlpha1, isSphericalAberrationActive) * flux1 * sp.weight;
                   } else if (currentScopeType === 'sct') {
                     iStar1 = (isSphericalAberrationActive ? airySphericalLookup(r1u, 0.35) : airyObstructedLookup(r1u, 0.35)) * flux1 * sp.weight;
                   } else {
@@ -2829,9 +2803,9 @@
 
                 if (d2sq <= maxR2) {
                   let iStar2;
-                  const r2u = Math.sqrt(d2sq) * airyScale;
+                  const r2u = (Math.sqrt(d2sq) * airyScale) / widthFactor2;
                   if (currentScopeType === 'newtonian') {
-                    iStar2 = newtonianAiryIntensity(dx2 * airyScale, dy2 * airyScale, 0.20, vaneAlpha2, isSphericalAberrationActive) * flux2 * sp.weight;
+                    iStar2 = newtonianAiryIntensity((dx2 * airyScale) / widthFactor2, (dy2 * airyScale) / widthFactor2, 0.20, vaneAlpha2, isSphericalAberrationActive) * flux2 * sp.weight;
                   } else if (currentScopeType === 'sct') {
                     iStar2 = (isSphericalAberrationActive ? airySphericalLookup(r2u, 0.35) : airyObstructedLookup(r2u, 0.35)) * flux2 * sp.weight;
                   } else {
@@ -2848,10 +2822,13 @@
           const i1 = sumI1 / sampleCount;
           const i2 = sumI2 / sampleCount;
 
+          // Aperture Light-Gathering Power Gain (when Brightness Perception modifier is ON)
+          const brightnessGain = isBrightnessPerceptionActive ? Math.pow(aperture / 100.0, 0.55) : 1.0;
+
           // Per-channel physical light flux
-          let rr = i1 * rgb1[0] / 255 + i2 * rgb2[0] / 255;
-          let gg = i1 * rgb1[1] / 255 + i2 * rgb2[1] / 255;
-          let bb = i1 * rgb1[2] / 255 + i2 * rgb2[2] / 255;
+          let rr = (i1 * rgb1[0] / 255 + i2 * rgb2[0] / 255) * brightnessGain;
+          let gg = (i1 * rgb1[1] / 255 + i2 * rgb2[1] / 255) * brightnessGain;
+          let bb = (i1 * rgb1[2] / 255 + i2 * rgb2[2] / 255) * brightnessGain;
 
           // Apply smooth logarithmic tone map curve
           rr = logarithmicToneMap(rr);
@@ -3067,6 +3044,13 @@
         return 3.0;
       }
     })();
+    let isBrightnessPerceptionActive = (function() {
+      try {
+        return sessionStorage.getItem('double_stars_brightness_perception') === 'true';
+      } catch (e) {
+        return false;
+      }
+    })();
 
     let turbulenceRafId = null;
     let turbulenceStartTime = performance.now();
@@ -3213,6 +3197,13 @@
         turbulenceBtn.classList.toggle('active', isTurbulenceActive);
         turbulenceBtn.innerText = `Atmospheric Turbulence: ${isTurbulenceActive ? 'ON' : 'OFF'}`;
       }
+
+      const brightnessBtn = document.getElementById('modalBrightnessToggle');
+      if (brightnessBtn) {
+        brightnessBtn.setAttribute('data-brightness', isBrightnessPerceptionActive ? 'true' : 'false');
+        brightnessBtn.classList.toggle('active', isBrightnessPerceptionActive);
+        brightnessBtn.innerText = `Brightness Perception: ${isBrightnessPerceptionActive ? 'ON' : 'OFF'}`;
+      }
       if (turbulenceControlsGroup) {
         turbulenceControlsGroup.style.display = isTurbulenceActive ? 'flex' : 'none';
       }
@@ -3229,33 +3220,23 @@
         r0Val.innerText = `${turbulenceSeeingArcsec.toFixed(1)}" seeing`;
       }
 
-      const diff = computeObservingDifficulty(star, userAperture);
-      const modalDiffVal = document.getElementById('modalDifficultyVal');
-      const modalDiffHelp = document.getElementById('modalDifficultyHelpIcon');
-      if (diff) {
-        modalDiffVal.innerHTML = `<span style="color: ${diff.color}; font-weight: 700;">${diff.label}</span>`;
-        if (modalDiffHelp) {
-          modalDiffHelp.setAttribute('data-tooltip', diff.reason);
-        }
-      }
-
       const app = computeAppearance(star, userAperture);
       const modalAppVal = document.getElementById('modalAppearanceVal');
       if (app) {
         modalAppVal.innerHTML = `<span style="color: ${app.color}; font-weight: 700;">${app.label}</span>`;
       }
 
-      // Pre-compute difficulty for modal preset chips to provide a color-coded preview
+      // Pre-compute visual appearance for modal preset chips to provide a color-coded preview based on appearance
       document.querySelectorAll('.modal-preset-chip').forEach(btn => {
         const ap = parseInt(btn.dataset.aperture);
         if (ap) {
-          const btnDiff = computeObservingDifficulty(star, ap);
-          if (btnDiff) {
+          const btnApp = computeAppearance(star, ap);
+          if (btnApp) {
             const isActive = btn.classList.contains('active');
-            btn.style.backgroundColor = btnDiff.bg;
-            btn.style.borderColor = btnDiff.color;
-            btn.style.color = isActive ? '#ffffff' : btnDiff.color;
-            btn.style.boxShadow = isActive ? `0 0 12px ${btnDiff.color}` : 'none';
+            btn.style.backgroundColor = btnApp.bg;
+            btn.style.borderColor = btnApp.color;
+            btn.style.color = isActive ? '#ffffff' : btnApp.color;
+            btn.style.boxShadow = isActive ? `0 0 12px ${btnApp.color}` : 'none';
             btn.style.opacity = isActive ? '1.0' : '0.85';
           }
         }
@@ -3432,10 +3413,6 @@
           const deltaA = Math.abs(a.mag1 - a.mag2);
           const deltaB = Math.abs(b.mag1 - b.mag2);
           res = deltaA - deltaB;
-        } else if (activeSortKey === "difficulty") {
-          const diffA = computeObservingDifficulty(a, userAperture);
-          const diffB = computeObservingDifficulty(b, userAperture);
-          res = diffA.score - diffB.score;
         } else if (activeSortKey === "appearance") {
           const appA = computeAppearance(a, userAperture);
           const appB = computeAppearance(b, userAperture);
@@ -3461,16 +3438,13 @@
       currentData.forEach(star => {
         const sepBarPercent = Math.min(100, Math.max(4, (star.sep / 50.0) * 100));
         const deltaValue = Math.abs(star.mag1 - star.mag2).toFixed(1);
-        const diff = computeObservingDifficulty(star, userAperture);
         const app = userAperture ? computeAppearance(star, userAperture) : null;
 
-        const appCellHtml = userAperture && app ? `
-          <td>
-            <span class="difficulty-badge" data-tooltip="${app.reason.replace(/"/g, '&quot;')}" style="color: ${app.color}; background: ${app.bg}; border-color: ${app.color}33;">
-              ${app.label}
-            </span>
-          </td>
-        ` : `<td style="display: none;"></td>`;
+        const appBadgeHtml = app ? `
+          <span class="appearance-badge" data-tooltip="${app.reason.replace(/"/g, '&quot;')}" style="color: ${app.color}; background: ${app.bg}; border-color: ${app.color}55;">
+            ${app.label}
+          </span>
+        ` : `<span style="color: var(--text-muted); font-size: 0.85rem;">—</span>`;
 
         html += `
           <tr class="main-row ${star.id === expandedStarId ? 'expanded-row' : ''}" data-id="${star.id}">
@@ -3505,14 +3479,11 @@
               </div>
             </td>
             <td>
-              <span class="difficulty-pill" data-tooltip="${diff.reason.replace(/"/g, '&quot;')}" style="color: ${diff.color}; background: ${diff.bg}; border-color: ${diff.border};">
-                ${diff.label}
-              </span>
+              ${appBadgeHtml}
             </td>
-            ${appCellHtml}
           </tr>
           <tr class="details-row" id="details-${star.id}" style="display: ${star.id === expandedStarId ? 'table-row' : 'none'};">
-            <td colspan="${userAperture ? 9 : 8}">
+            <td colspan="8">
               <div class="details-grid">
                 <div class="details-box">
                   <div class="details-title">🎨 Color Contrast &amp; Hues</div>
@@ -3553,8 +3524,8 @@
 
       tableBody.innerHTML = html;
 
-      // Attach custom floating tooltip listeners to difficulty badges
-      document.querySelectorAll(".difficulty-badge").forEach(badge => {
+      // Attach custom floating tooltip listeners to appearance badges
+      document.querySelectorAll(".appearance-badge").forEach(badge => {
         badge.addEventListener("mouseenter", (e) => {
           const text = badge.getAttribute("data-tooltip");
           if (text) showCustomTooltip(text, e);
@@ -3682,18 +3653,7 @@
         helpIcon.addEventListener("mouseleave", hideCustomTooltip);
       }
 
-      // Modal Difficulty Help Icon Tooltip Listeners
-      const modalDiffHelp = document.getElementById("modalDifficultyHelpIcon");
-      if (modalDiffHelp) {
-        modalDiffHelp.addEventListener("mouseenter", (e) => {
-          const text = modalDiffHelp.getAttribute("data-tooltip");
-          if (text) showCustomTooltip(text, e);
-        });
-        modalDiffHelp.addEventListener("mousemove", (e) => {
-          positionCustomTooltip(e);
-        });
-        modalDiffHelp.addEventListener("mouseleave", hideCustomTooltip);
-      }
+
 
       // Observing Guide Drawer Handlers
       guideToggleBtn.addEventListener("click", openGuideDrawer);
@@ -3879,6 +3839,17 @@
             stopTurbulenceAnimation();
             if (currentModalStarId) renderSimulationModal(false);
           }
+        });
+      }
+
+      const brightnessBtn = document.getElementById('modalBrightnessToggle');
+      if (brightnessBtn) {
+        brightnessBtn.addEventListener('click', () => {
+          isBrightnessPerceptionActive = !isBrightnessPerceptionActive;
+          try {
+            sessionStorage.setItem('double_stars_brightness_perception', isBrightnessPerceptionActive ? 'true' : 'false');
+          } catch (e) {}
+          if (currentModalStarId) renderSimulationModal();
         });
       }
 
