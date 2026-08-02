@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Double Star Perception Mode Tuner</title>
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --bg-card: #151c2c;
+      --bg-panel: #1e293b;
+      --border: #334155;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+
+    header {
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      margin-bottom: 0.25rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .tuner-layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 1.5rem;
+      max-width: 1750px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+      .tuner-layout { grid-template-columns: 1fr; }
+    }
+
+    .controls-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent-hover);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mode-toggle-btn {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border: 1px solid var(--accent);
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent-hover);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .mode-toggle-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(59, 130, 246, 0.4);
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-dark);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .tab-btn.active {
+      background: var(--bg-panel);
+      color: var(--text-main);
+      border-color: var(--accent);
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.825rem;
+      color: var(--text-muted);
+    }
+
+    .slider-header-val-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .slider-header strong {
+      color: var(--text-main);
+      font-family: var(--font-mono);
+    }
+
+    .btn-reset-slider {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 4px;
+      padding: 0.05rem 0.3rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      line-height: 1;
+    }
+
+    .btn-reset-slider:hover {
+      color: var(--accent-hover);
+      border-color: var(--accent);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .json-box-wrapper {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    textarea.json-output {
+      width: 100%;
+      height: 180px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #38bdf8;
+      font-family: var(--font-mono);
+      font-size: 0.775rem;
+      padding: 0.75rem;
+      resize: none;
+    }
+
+    .btn-copy {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-copy:hover {
+      background: var(--accent-hover);
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-container { grid-template-columns: 1fr; }
+    }
+
+    .sim-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .sim-card-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .star-tag {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent-hover);
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .aperture-tag {
+      background: rgba(234, 179, 8, 0.15);
+      color: #fde047;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid rgba(234, 179, 8, 0.3);
+    }
+
+    .canvas-viewport {
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: #000000;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8) inset;
+    }
+
+    .canvas-viewport canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+    }
+
+    .sim-meta {
+      margin-top: 0.75rem;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      font-size: 0.775rem;
+      color: var(--text-muted);
+    }
+
+    .sim-meta span strong {
+      color: var(--text-main);
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🔭 Dual-Mode Perception Simulator Tuner</h1>
+    <p>Exact replica of main app Airy PSF renderer @ 300x magnification</p>
+  </header>
+
+  <div class="tuner-layout">
+    <!-- LEFT PANEL: MODE TOGGLE, SLIDERS & DUAL-MODE JSON CONFIG -->
+    <div class="controls-panel">
+      <div class="panel-title">
+        <span>⚙️ Perception Mode Setup</span>
+        <button class="btn-copy" id="resetBtn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Reset All</button>
+      </div>
+
+      <!-- Brightness Perception Toggle Button -->
+      <button class="mode-toggle-btn active" id="globalBrightnessToggle">
+        Brightness Perception: ON
+      </button>
+
+      <!-- Parameter Section Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tabOnBtn">ON Mode Settings</button>
+        <button class="tab-btn" id="tabOffBtn">OFF Mode Settings</button>
+      </div>
+
+      <!-- SECTION A: Brightness Perception ON Settings -->
+      <div id="sectionOnSettings" style="display: flex; flex-direction: column; gap: 0.85rem;">
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>ON - Stellar Mag Exponent:</span>
+            <div class="slider-header-val-group">
+              <strong id="valOnMagExp">0.35</strong>
+              <button class="btn-reset-slider" data-target="sliderOnMagExp" data-default="0.35" title="Reset slider to default">↺</button>
+            </div>
+          </div>
+          <input type="range" id="sliderOnMagExp" min="0.10" max="0.80" step="0.01" value="0.35">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>ON - Aperture Power Exponent:</span>
+            <div class="slider-header-val-group">
+              <strong id="valOnApExp">1.20</strong>
+              <button class="btn-reset-slider" data-target="sliderOnApExp" data-default="1.20" title="Reset slider to default">↺</button>
+            </div>
+          </div>
+          <input type="range" id="sliderOnApExp" min="0.00" max="2.50" step="0.05" value="1.20">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>ON - Aperture Floor Offset (50mm):</span>
+            <div class="slider-header-val-group">
+              <strong id="valOnApFloor">0.30</strong>
+              <button class="btn-reset-slider" data-target="sliderOnApFloor" data-default="0.30" title="Reset slider to default">↺</button>
+            </div>
+          </div>
+          <input type="range" id="sliderOnApFloor" min="0.20" max="1.20" step="0.05" value="0.30">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>ON - Eye Threshold (iThreshold):</span>
+            <div class="slider-header-val-group">
+              <strong id="valOnThreshold">0.025</strong>
+              <button class="btn-reset-slider" data-target="sliderOnThreshold" data-default="0.025" title="Reset slider to default">↺</button>
+            </div>
+          </div>
+          <input type="range" id="sliderOnThreshold" min="0.005" max="0.080" step="0.002" value="0.025">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>ON - Width Factor Minimum:</span>
+            <div class="slider-header-val-group">
+              <strong id="valOnWidthMin">0.35</strong>
+              <button class="btn-reset-slider" data-target="sliderOnWidthMin" data-default="0.35" title="Reset slider to default">↺</button>
+            </div>
+          </div>
+          <input type="range" id="sliderOnWidthMin" min="0.15" max="0.80" step="0.02" value="0.35">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>ON - Width Factor Shrink Scale:</span>
+            <div class="slider-header-val-group">
+              <strong id="valOnWidthScale">0.55</strong>
+              <button class="btn-reset-slider" data-target="sliderOnWidthScale" data-default="0.55" title="Reset slider to default">↺</button>
+            </div>
+          </div>
+          <input type="range" id="sliderOnWidthScale" min="0.10" max="0.80" step="0.02" value="0.55">
+        </div>
+      </div>
+
+      <!-- SECTION B: Standard Perception OFF Settings -->
+      <div id="sectionOffSettings" style="display: none; flex-direction: column; gap: 0.85rem;">
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>OFF - Delta Mag Exponent:</span>
+            <div class="slider-header-val-group">
+              <strong id="valOffMagExp">0.40</strong>
+              <button class="btn-reset-slider" data-target="sliderOffMagExp" data-default="0.40" title="Reset slider to default">↺</button>
+            </div>
+          </div>
+          <input type="range" id="sliderOffMagExp" min="0.10" max="1.00" step="0.02" value="0.40">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>OFF - Secondary Flux Floor:</span>
+            <div class="slider-header-val-group">
+              <strong id="valOffFluxFloor">0.04</strong>
+              <button class="btn-reset-slider" data-target="sliderOffFluxFloor" data-default="0.04" title="Reset slider to default">↺</button>
+            </div>
+          </div>
+          <input type="range" id="sliderOffFluxFloor" min="0.01" max="0.20" step="0.005" value="0.04">
+        </div>
+      </div>
+
+      <!-- JSON OUTPUT TEXTAREA -->
+      <div class="json-box-wrapper">
+        <div class="slider-header">
+          <span>📋 Dual-Mode Config JSON:</span>
+        </div>
+        <textarea id="configJson" class="json-output" readonly></textarea>
+        <button class="btn-copy" id="copyJsonBtn">Copy Config JSON</button>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: 2x2 SIMULATION GRID -->
+    <div class="grid-container">
+      <!-- VIEW 1: Rigel @ 60mm -->
+      <div class="sim-card">
+        <div class="sim-card-header">
+          <span class="star-tag">Rigel (0.1 / 6.8 mag)</span>
+          <span class="aperture-tag">60mm @ 300x</span>
+        </div>
+        <div class="canvas-viewport" id="viewportRigel60"></div>
+        <div class="sim-meta" id="metaRigel60">
+          <span>Primary: <strong id="pRigel60">—</strong></span>
+          <span>Secondary: <strong id="sRigel60">—</strong></span>
+        </div>
+      </div>
+
+      <!-- VIEW 2: Rigel @ 200mm -->
+      <div class="sim-card">
+        <div class="sim-card-header">
+          <span class="star-tag">Rigel (0.1 / 6.8 mag)</span>
+          <span class="aperture-tag">200mm @ 300x</span>
+        </div>
+        <div class="canvas-viewport" id="viewportRigel200"></div>
+        <div class="sim-meta" id="metaRigel200">
+          <span>Primary: <strong id="pRigel200">—</strong></span>
+          <span>Secondary: <strong id="sRigel200">—</strong></span>
+        </div>
+      </div>
+
+      <!-- VIEW 3: Struve 2398 @ 60mm -->
+      <div class="sim-card">
+        <div class="sim-card-header">
+          <span class="star-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3);">Struve 2398 (8.9 / 9.7 mag)</span>
+          <span class="aperture-tag">60mm @ 300x</span>
+        </div>
+        <div class="canvas-viewport" id="viewportStruve60"></div>
+        <div class="sim-meta" id="metaStruve60">
+          <span>Primary: <strong id="pStruve60">—</strong></span>
+          <span>Secondary: <strong id="sStruve60">—</strong></span>
+        </div>
+      </div>
+
+      <!-- VIEW 4: Struve 2398 @ 200mm -->
+      <div class="sim-card">
+        <div class="sim-card-header">
+          <span class="star-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3);">Struve 2398 (8.9 / 9.7 mag)</span>
+          <span class="aperture-tag">200mm @ 300x</span>
+        </div>
+        <div class="canvas-viewport" id="viewportStruve200"></div>
+        <div class="sim-meta" id="metaStruve200">
+          <span>Primary: <strong id="pStruve200">—</strong></span>
+          <span>Secondary: <strong id="sStruve200">—</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // STAR DEFINITIONS
+    // ==========================================
+    const RIGEL = {
+      name: "Rigel",
+      mag1: 0.1,
+      mag2: 6.8,
+      sep: 9.3,
+      pa: 202,
+      color1: "#a5c8ff",
+      color2: "#ffffff"
+    };
+
+    const STRUVE2398 = {
+      name: "Struve 2398",
+      mag1: 8.9,
+      mag2: 9.7,
+      sep: 14.4,
+      pa: 170,
+      color1: "#ff9d71",
+      color2: "#ff7b54"
+    };
+
+    // ==========================================
+    // EXACT COPY OF INDEX.HTML PHYSICS ENGINE
+    // Lines 2317-2852 from index.html
+    // ==========================================
+
+    // Bessel J1(x) — Rational polynomial approximation (Abramowitz & Stegun §9.4)
+    function besselJ1(x) {
+      const ax = Math.abs(x);
+      let result;
+      if (ax < 8.0) {
+        const y = x * x;
+        result = x * (72362614232.0 + y * (-7895059235.0 + y * (242396853.1
+          + y * (-2972611.439 + y * (15704.48260 + y * (-30.16036606)))))) /
+          (144725228442.0 + y * (2300535178.0 + y * (18583304.74
+          + y * (99447.43394 + y * (376.9991397 + y * 1.0)))));
+      } else {
+        const z = 8.0 / ax;
+        const y = z * z;
+        const xx = ax - 2.356194491;
+        const p = 1.0 + y * (0.183105e-2 + y * (-0.3516396496e-4
+          + y * (0.2457520174e-5 + y * (-0.240337019e-6))));
+        const q = 0.04687499995 + y * (-0.2002690873e-3 + y * (0.8449199096e-5
+          + y * (-0.88228987e-6 + y * 0.105787412e-6)));
+        result = Math.sqrt(0.636619772 / ax) * (Math.cos(xx) * p - z * Math.sin(xx) * q);
+        if (x < 0) result = -result;
+      }
+      return result;
+    }
+
+    // Airy disk intensity: I(u) = [2·J₁(u)/u]², with I(0) = 1.0
+    function airyIntensity(u) {
+      if (u < 1e-10) return 1.0;
+      const j1 = besselJ1(u);
+      const val = 2.0 * j1 / u;
+      return val * val;
+    }
+
+    // Precomputed Airy intensity LUT for fast per-pixel canvas rendering
+    const AIRY_LUT_SIZE = 8192;
+    const AIRY_LUT_MAX_U = 40.0; // covers ~10 Rayleigh distances (several rings)
+    const AIRY_LUT = new Float64Array(AIRY_LUT_SIZE);
+    (function initAiryLUT() {
+      for (let i = 0; i < AIRY_LUT_SIZE; i++) {
+        AIRY_LUT[i] = airyIntensity((i / AIRY_LUT_SIZE) * AIRY_LUT_MAX_U);
+      }
+    })();
+
+    function airyLookup(u) {
+      if (u < 0) u = -u;
+      if (u >= AIRY_LUT_MAX_U) return 0;
+      const idx = (u / AIRY_LUT_MAX_U) * AIRY_LUT_SIZE;
+      const i = idx | 0; // fast floor
+      if (i >= AIRY_LUT_SIZE - 1) return AIRY_LUT[AIRY_LUT_SIZE - 1];
+      const frac = idx - i;
+      return AIRY_LUT[i] + (AIRY_LUT[i + 1] - AIRY_LUT[i]) * frac;
+    }
+
+    // Obstructed pupil Airy intensity
+    function airyObstructedIntensity(u, eps = 0.30) {
+      if (u < 1e-10) return 1.0;
+      const j1 = besselJ1(u);
+      const val1 = 2.0 * j1 / u;
+      const uEps = u * eps;
+      const j1Eps = besselJ1(uEps);
+      const val2 = 2.0 * j1Eps / uEps;
+      const combined = (val1 - eps * eps * val2) / (1.0 - eps * eps);
+      return combined * combined;
+    }
+
+    const AIRY_OBS_20_LUT = new Float64Array(AIRY_LUT_SIZE);
+    const AIRY_OBS_35_LUT = new Float64Array(AIRY_LUT_SIZE);
+    (function initAiryObsLUT() {
+      for (let i = 0; i < AIRY_LUT_SIZE; i++) {
+        const u = (i / AIRY_LUT_SIZE) * AIRY_LUT_MAX_U;
+        AIRY_OBS_20_LUT[i] = airyObstructedIntensity(u, 0.20);
+        AIRY_OBS_35_LUT[i] = airyObstructedIntensity(u, 0.35);
+      }
+    })();
+
+    function airyObstructedLookup(u, eps = 0.35) {
+      if (u < 0) u = -u;
+      if (u >= AIRY_LUT_MAX_U) return 0;
+      const lut = (eps === 0.20) ? AIRY_OBS_20_LUT : AIRY_OBS_35_LUT;
+      const idx = (u / AIRY_LUT_MAX_U) * AIRY_LUT_SIZE;
+      const i = idx | 0;
+      if (i >= AIRY_LUT_SIZE - 1) return lut[AIRY_LUT_SIZE - 1];
+      const frac = idx - i;
+      return lut[i] + (lut[i + 1] - lut[i]) * frac;
+    }
+
+    // Bessel J0(x) — Rational polynomial approximation (Abramowitz & Stegun §9.4)
+    function besselJ0(x) {
+      const ax = Math.abs(x);
+      if (ax < 3.75) {
+        const y = (x / 3.75) * (x / 3.75);
+        return 1.0 + y * (-2.2499997 + y * (1.2656208 + y * (-0.3163866 + y * (0.0444479 + y * (-0.0039444 + y * 0.0002100)))));
+      } else {
+        const y = 3.75 / ax;
+        const f0 = 0.79788456 + y * (-0.00000077 + y * (-0.00552740 + y * (0.00009512 + y * (0.00137237 + y * (-0.00072805)))));
+        const theta0 = ax - 0.78539816 + y * (-0.04166397 + y * (-0.00003954 + y * (0.00262573 + y * (-0.00054125 + y * (-0.00029333)))));
+        return (1.0 / Math.sqrt(ax)) * f0 * Math.cos(theta0);
+      }
+    }
+
+    // Exact Hankel transform for pupil with primary spherical aberration (W040 = 0.3λ)
+    function sphericalAiryIntensity(u, eps = 0.0, w040 = 0.3) {
+      if (u < 1e-10 && w040 === 0.0) return 1.0;
+      const steps = 120;
+      const dRho = (1.0 - eps) / steps;
+      let reSum = 0;
+      let imSum = 0;
+      const phaseConst = 2.0 * Math.PI * w040;
+
+      for (let i = 0; i < steps; i++) {
+        const rho = eps + (i + 0.5) * dRho;
+        const phase = phaseConst * Math.pow(rho, 4);
+        const j0 = besselJ0(u * rho);
+        const weight = rho * j0 * dRho;
+        reSum += Math.cos(phase) * weight;
+        imSum += Math.sin(phase) * weight;
+      }
+
+      const norm = Math.pow((1.0 - eps * eps) / 2.0, 2);
+      return (reSum * reSum + imSum * imSum) / norm;
+    }
+
+    const AIRY_SPHERICAL_00_LUT = new Float64Array(AIRY_LUT_SIZE);
+    const AIRY_SPHERICAL_20_LUT = new Float64Array(AIRY_LUT_SIZE);
+    const AIRY_SPHERICAL_35_LUT = new Float64Array(AIRY_LUT_SIZE);
+    const NEWTONIAN_SPHERICAL_RE_LUT = new Float64Array(AIRY_LUT_SIZE);
+    const NEWTONIAN_SPHERICAL_IM_LUT = new Float64Array(AIRY_LUT_SIZE);
+
+    (function initAirySphericalLUTs() {
+      const epsNewt = 0.20;
+      const w040 = 0.3;
+      const steps = 120;
+      const dRho = (1.0 - epsNewt) / steps;
+      const phaseConst = 2.0 * Math.PI * w040;
+      const normFactor = (1.0 - epsNewt * epsNewt) / 2.0;
+
+      for (let i = 0; i < AIRY_LUT_SIZE; i++) {
+        const u = (i / AIRY_LUT_SIZE) * AIRY_LUT_MAX_U;
+        AIRY_SPHERICAL_00_LUT[i] = sphericalAiryIntensity(u, 0.00, 0.3);
+        AIRY_SPHERICAL_20_LUT[i] = sphericalAiryIntensity(u, 0.20, 0.3);
+        AIRY_SPHERICAL_35_LUT[i] = sphericalAiryIntensity(u, 0.35, 0.3);
+
+        let reSum = 0;
+        let imSum = 0;
+        for (let j = 0; j < steps; j++) {
+          const rho = epsNewt + (j + 0.5) * dRho;
+          const phase = phaseConst * Math.pow(rho, 4);
+          const j0 = besselJ0(u * rho);
+          const weight = rho * j0 * dRho;
+          reSum += Math.cos(phase) * weight;
+          imSum += Math.sin(phase) * weight;
+        }
+        NEWTONIAN_SPHERICAL_RE_LUT[i] = reSum / normFactor;
+        NEWTONIAN_SPHERICAL_IM_LUT[i] = imSum / normFactor;
+      }
+    })();
+
+    function airySphericalLookup(u, eps = 0.0) {
+      if (u < 0) u = -u;
+      if (u >= AIRY_LUT_MAX_U) return 0;
+      let lut = AIRY_SPHERICAL_00_LUT;
+      if (eps === 0.20) lut = AIRY_SPHERICAL_20_LUT;
+      else if (eps === 0.35) lut = AIRY_SPHERICAL_35_LUT;
+
+      const idx = (u / AIRY_LUT_MAX_U) * AIRY_LUT_SIZE;
+      const i = idx | 0;
+      if (i >= AIRY_LUT_SIZE - 1) return lut[AIRY_LUT_SIZE - 1];
+      const frac = idx - i;
+      return lut[i] + (lut[i + 1] - lut[i]) * frac;
+    }
+
+    function sinc(x) {
+      if (Math.abs(x) < 1e-6) return 1.0;
+      return Math.sin(x) / x;
+    }
+
+    // Exact Fraunhofer wave diffraction field intensity for Newtonian reflector pupil
+    function newtonianAiryIntensity(ux, uy, eps = 0.20, alpha = 0.030, hasSpherical = false) {
+      const u = Math.sqrt(ux * ux + uy * uy);
+      if (u < 1e-10 && !hasSpherical) return 1.0;
+
+      if (hasSpherical) {
+        let reAiry = 0.0;
+        let imAiry = 0.0;
+        if (u < AIRY_LUT_MAX_U) {
+          const idx = (u / AIRY_LUT_MAX_U) * AIRY_LUT_SIZE;
+          const i = idx | 0;
+          const frac = idx - i;
+          if (i < AIRY_LUT_SIZE - 1) {
+            reAiry = NEWTONIAN_SPHERICAL_RE_LUT[i] + (NEWTONIAN_SPHERICAL_RE_LUT[i + 1] - NEWTONIAN_SPHERICAL_RE_LUT[i]) * frac;
+            imAiry = NEWTONIAN_SPHERICAL_IM_LUT[i] + (NEWTONIAN_SPHERICAL_IM_LUT[i + 1] - NEWTONIAN_SPHERICAL_IM_LUT[i]) * frac;
+          }
+        }
+
+        const sincUx = sinc(ux);
+        const sincUy = sinc(uy);
+        const sincAlphaUx = sinc(alpha * ux);
+        const sincAlphaUy = sinc(alpha * uy);
+
+        const aVane1 = alpha * sincAlphaUx * sincUy;
+        const aVane2 = alpha * sincUx * sincAlphaUy;
+
+        const reTotal = reAiry - (4.0 / Math.PI) * (aVane1 + aVane2);
+        const imTotal = imAiry;
+
+        return reTotal * reTotal + imTotal * imTotal;
+      }
+
+      const j1_u = besselJ1(u);
+      const val1 = 2.0 * j1_u / u;
+      const uEps = u * eps;
+      const j1_uEps = besselJ1(uEps);
+      const val2 = 2.0 * j1_uEps / uEps;
+      const aAiry = val1 - eps * eps * val2;
+
+      const sincUx = sinc(ux);
+      const sincUy = sinc(uy);
+      const sincAlphaUx = sinc(alpha * ux);
+      const sincAlphaUy = sinc(alpha * uy);
+
+      const aVane1 = alpha * sincAlphaUx * sincUy;
+      const aVane2 = alpha * sincUx * sincAlphaUy;
+
+      const normFactor = 1.0 - eps * eps - (8.0 / Math.PI) * alpha;
+      const psi = (aAiry - (8.0 / Math.PI) * (aVane1 + aVane2)) / normFactor;
+
+      return psi * psi;
+    }
+
+    // Parse hex color string to [R, G, B] array (0–255)
+    function hexToRgb(hex) {
+      hex = hex.replace('#', '');
+      return [
+        parseInt(hex.substring(0, 2), 16),
+        parseInt(hex.substring(2, 4), 16),
+        parseInt(hex.substring(4, 6), 16)
+      ];
+    }
+
+    // ==========================================
+    // EXACT COPY OF renderAiryCanvas FROM INDEX.HTML
+    // With tunable parameters injected via global `tunerCfg`
+    // ==========================================
+
+    // Global state that renderAiryCanvas reads (simulating index.html's globals)
+    let isTurbulenceActive = false;
+    let turbulenceSeeingArcsec = 1.5;
+    let turbulenceStartTime = performance.now();
+    let turbulenceSpeedMultiplier = 1.0;
+    let turbulenceMacroMultiplier = 1.0;
+    let currentScopeType = 'refractor';
+    let isSphericalAberrationActive = false;
+    let isBrightnessPerceptionActive = true;
+
+    // This is the EXACT renderAiryCanvas from index.html lines 2559-2852,
+    // with ONLY the hardcoded perception constants replaced by tunerCfg references.
+    function renderAiryCanvas(wrapper, star, aperture, magPower, isInteractiveZooming) {
+      const rect = wrapper ? wrapper.getBoundingClientRect() : { width: 400, height: 400 };
+      const wrapperWidth = rect.width || wrapper.clientWidth || 400;
+      const wrapperHeight = rect.height || wrapper.clientHeight || wrapperWidth;
+
+      // Enforce strict 1:1 square aspect ratio based on smallest bounding dimension
+      const displaySize = Math.max(100, Math.round(Math.min(wrapperWidth, wrapperHeight)));
+
+      // High-DPI scaling (no turbulence in tuner, always static high-quality)
+      let animScale = Math.max(2, window.devicePixelRatio || 2);
+      const renderSize = Math.max(160, Math.round(displaySize * animScale));
+
+      let canvas = wrapper.querySelector('canvas');
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+      }
+      wrapper.innerHTML = '';
+      wrapper.appendChild(canvas);
+
+      // Internal render resolution & fixed 1:1 CSS display size matching the circular viewport
+      canvas.width = renderSize;
+      canvas.height = renderSize;
+      canvas.style.width = displaySize + 'px';
+      canvas.style.height = displaySize + 'px';
+      canvas.style.objectFit = 'contain';
+
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.createImageData(renderSize, renderSize);
+      const data = imageData.data;
+
+      // Permanent Scotopic Wavelength Calibration (λ = 507nm) + 15mm visual resolution bonus for screen perception
+      const effectiveAperture = aperture + 15;
+      const rayleigh = 127.3 / effectiveAperture; // arcseconds (127.3 / (D + 15mm))
+      const isNight = false; // tuner doesn't have night mode
+
+      // Select pupil lookup based on Optical Design (Refractor vs SCT/MCT vs Newtonian with spider vanes)
+      const isObstructed = (currentScopeType === 'sct' || currentScopeType === 'newtonian');
+      const lookupFn = isObstructed ? airyObstructedLookup : airyLookup;
+      const hasSpiderVanes = (currentScopeType === 'newtonian');
+
+      // Absolute Optical Power (Magnification M in X): Baseline 200x (View scale reduced by 25% from original baseline)
+      const viewBoxSize = 170 * (wrapperWidth / 400);
+      const scaleUsed = 0.09375 * (magPower / 200.0);
+      const arcsecPx = (renderSize * 12.5 * scaleUsed) / viewBoxSize;
+      const rayleighPx = rayleigh * arcsecPx;
+
+      // Airy u-parameter scale: first zero at u = 1.22π ≈ 3.8317 corresponds to 1 Rayleigh
+      const airyScale = 3.8317 / rayleighPx;
+
+      // Star positions in canvas pixels (centered, physical separation, no visual compression)
+      const cx = renderSize / 2;
+      const cy = renderSize / 2;
+      const angleRad = (star.pa - 90) * (Math.PI / 180);
+      const sepCanvasPx = star.sep * arcsecPx;
+      const halfSep = sepCanvasPx / 2;
+
+      const sx1 = cx - halfSep * Math.cos(angleRad);
+      const sy1 = cy - halfSep * Math.sin(angleRad);
+      const sx2 = cx + halfSep * Math.cos(angleRad);
+      const sy2 = cy + halfSep * Math.sin(angleRad);
+
+      // Perceptual magnitude flux scaling — uses tunerCfg for tunability
+      const tc = window.tunerCfg;
+      const baseFlux1 = Math.max(0.008, Math.pow(10, -0.4 * (star.mag1 - 0.1) * tc.brightnessPerceptionMode.magExponent));
+      const baseFlux2 = Math.max(0.008, Math.pow(10, -0.4 * (star.mag2 - 0.1) * tc.brightnessPerceptionMode.magExponent));
+
+      // Aperture power scalar for brightness perception mode
+      const pMode = tc.brightnessPerceptionMode;
+      const apPower = pMode.apFloor + (2.50 - pMode.apFloor) * Math.pow(Math.max(0, aperture - 50) / 150.0, pMode.apExponent);
+
+      let flux1 = baseFlux1 * apPower;
+      let flux2 = baseFlux2 * apPower;
+
+      // Magnitude-Dependent Visual Threshold Cutoff (when Brightness Perception modifier is ON)
+      let widthFactor1 = 1.0;
+      let widthFactor2 = 1.0;
+
+      if (isBrightnessPerceptionActive) {
+        const iThreshold = tc.brightnessPerceptionMode.iThreshold;
+
+        const eta1 = Math.min(1.0, iThreshold / baseFlux1);
+        const eta2 = Math.min(1.0, iThreshold / baseFlux2);
+
+        widthFactor1 = Math.min(1.0, Math.max(tc.brightnessPerceptionMode.widthMin, (1.0 - tc.brightnessPerceptionMode.widthScale * Math.sqrt(eta1))));
+        widthFactor2 = Math.min(1.0, Math.max(tc.brightnessPerceptionMode.widthMin, (1.0 - tc.brightnessPerceptionMode.widthScale * Math.sqrt(eta2))));
+      } else {
+        // When Brightness Perception is OFF: normalized relative scaling for primary star
+        flux1 = 1.0;
+        flux2 = Math.max(tc.standardPerceptionMode.fluxFloor, Math.pow(10, -0.4 * (star.mag2 - star.mag1) * tc.standardPerceptionMode.magExponent));
+      }
+
+      // Spider vane diffraction alpha ratio (balanced sweet spot: clear 4-pointed spikes without overpowering the field)
+      const vaneAlpha1 = Math.min(0.035, 0.022 + Math.max(0, (4.5 - star.mag1) * 0.003));
+      const vaneAlpha2 = Math.min(0.035, 0.022 + Math.max(0, (4.5 - star.mag2) * 0.003));
+
+      // Star colors
+      const c1 = isNight ? '#ff3333' : star.color1;
+      const c2 = isNight ? '#ff3333' : star.color2;
+      const rgb1 = hexToRgb(c1);
+      const rgb2 = hexToRgb(c2);
+
+      // No turbulence in tuner — single static speckle
+      let turbulenceSpeckles = [{ dx: 0, dy: 0, weight: 1.0 }];
+
+      // Smooth, natural logarithmic tone curve for Airy PSF rendering
+      // Maps peak core to 100%, 1st ring to ~15.0%, 2nd ring to ~4.2%, 3rd ring to ~1.7% with continuous Airy profile
+      function logarithmicToneMap(val) {
+        if (val <= 0.0008) return 0.0;
+        const k = 44.0;
+        const compressed = Math.log(1.0 + k * val) / Math.log(1.0 + k);
+        return Math.min(1.0, Math.max(0.0, compressed));
+      }
+
+      const saturationMix = 0.55; // desaturate slightly to match visual eyepiece perception
+
+      // Skip pixels beyond this radius from both stars (Airy function is negligible)
+      const maxR = AIRY_LUT_MAX_U / airyScale;
+      const maxR2 = maxR * maxR;
+
+      // No turbulence speckle radius expansion needed
+      let maxSpeckleRadius = 0;
+
+      // PERFORMANCE OPTIMIZATION 1: Tight Bounding Box Pixel Culling
+      const minX = Math.max(0, Math.floor(Math.min(sx1, sx2) - maxR - maxSpeckleRadius));
+      const maxX = Math.min(renderSize, Math.ceil(Math.max(sx1, sx2) + maxR + maxSpeckleRadius));
+      const minY = Math.max(0, Math.floor(Math.min(sy1, sy2) - maxR - maxSpeckleRadius));
+      const maxY = Math.min(renderSize, Math.ceil(Math.max(sy1, sy2) + maxR + maxSpeckleRadius));
+
+      // PERFORMANCE OPTIMIZATION 2: Adaptive Sub-pixel Anti-Aliasing (SSAA)
+      // Always 4 samples (2x2 SSAA) for static view in tuner
+      const subpixelOffsets = [
+        [0.25, 0.25],
+        [0.75, 0.25],
+        [0.25, 0.75],
+        [0.75, 0.75]
+      ];
+      const sampleCount = subpixelOffsets.length;
+
+      // EXACT PIXEL LOOP FROM INDEX.HTML LINES 2769-2849
+      for (let py = minY; py < maxY; py++) {
+        for (let px = minX; px < maxX; px++) {
+          let sumI1 = 0;
+          let sumI2 = 0;
+          let activeSamples = 0;
+
+          for (let s = 0; s < sampleCount; s++) {
+            const spx = px + subpixelOffsets[s][0];
+            const spy = py + subpixelOffsets[s][1];
+
+            for (let k = 0; k < turbulenceSpeckles.length; k++) {
+              const sp = turbulenceSpeckles[k];
+              const dx1 = spx - (sx1 + sp.dx);
+              const dy1 = spy - (sy1 + sp.dy);
+              const d1sq = dx1 * dx1 + dy1 * dy1;
+
+              const dx2 = spx - (sx2 + sp.dx);
+              const dy2 = spy - (sy2 + sp.dy);
+              const d2sq = dx2 * dx2 + dy2 * dy2;
+
+              if (d1sq <= maxR2 || d2sq <= maxR2) {
+                activeSamples++;
+                if (d1sq <= maxR2) {
+                  let iStar1;
+                  const r1u = (Math.sqrt(d1sq) * airyScale) / widthFactor1;
+                  if (currentScopeType === 'newtonian') {
+                    iStar1 = newtonianAiryIntensity((dx1 * airyScale) / widthFactor1, (dy1 * airyScale) / widthFactor1, 0.20, vaneAlpha1, isSphericalAberrationActive) * flux1 * sp.weight;
+                  } else if (currentScopeType === 'sct') {
+                    iStar1 = (isSphericalAberrationActive ? airySphericalLookup(r1u, 0.35) : airyObstructedLookup(r1u, 0.35)) * flux1 * sp.weight;
+                  } else {
+                    iStar1 = (isSphericalAberrationActive ? airySphericalLookup(r1u, 0.00) : airyLookup(r1u)) * flux1 * sp.weight;
+                  }
+                  sumI1 += iStar1;
+                }
+
+                if (d2sq <= maxR2) {
+                  let iStar2;
+                  const r2u = (Math.sqrt(d2sq) * airyScale) / widthFactor2;
+                  if (currentScopeType === 'newtonian') {
+                    iStar2 = newtonianAiryIntensity((dx2 * airyScale) / widthFactor2, (dy2 * airyScale) / widthFactor2, 0.20, vaneAlpha2, isSphericalAberrationActive) * flux2 * sp.weight;
+                  } else if (currentScopeType === 'sct') {
+                    iStar2 = (isSphericalAberrationActive ? airySphericalLookup(r2u, 0.35) : airyObstructedLookup(r2u, 0.35)) * flux2 * sp.weight;
+                  } else {
+                    iStar2 = (isSphericalAberrationActive ? airySphericalLookup(r2u, 0.00) : airyLookup(r2u)) * flux2 * sp.weight;
+                  }
+                  sumI2 += iStar2;
+                }
+              }
+            }
+          }
+
+          if (activeSamples === 0) continue;
+
+          const i1 = sumI1 / sampleCount;
+          const i2 = sumI2 / sampleCount;
+
+          const brightnessGain = 1.0;
+
+          // Per-channel physical light flux
+          let rr = (i1 * rgb1[0] / 255 + i2 * rgb2[0] / 255) * brightnessGain;
+          let gg = (i1 * rgb1[1] / 255 + i2 * rgb2[1] / 255) * brightnessGain;
+          let bb = (i1 * rgb1[2] / 255 + i2 * rgb2[2] / 255) * brightnessGain;
+
+          // Apply smooth logarithmic tone map curve
+          rr = logarithmicToneMap(rr);
+          gg = logarithmicToneMap(gg);
+          bb = logarithmicToneMap(bb);
+
+          // Desaturate toward luminance (simulates human eye scotopic/mesopic color perception)
+          const lum = 0.299 * rr + 0.587 * gg + 0.114 * bb;
+          rr = lum + (rr - lum) * saturationMix;
+          gg = lum + (gg - lum) * saturationMix;
+          bb = lum + (bb - lum) * saturationMix;
+
+          const idx = (py * renderSize + px) * 4;
+          data[idx]     = Math.min(255, rr * 255 + 0.5) | 0;
+          data[idx + 1] = Math.min(255, gg * 255 + 0.5) | 0;
+          data[idx + 2] = Math.min(255, bb * 255 + 0.5) | 0;
+          data[idx + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+    // ==========================================
+    // TUNER UI LOGIC
+    // ==========================================
+
+    // Controls DOM References
+    const globalBrightnessToggle = document.getElementById('globalBrightnessToggle');
+    const tabOnBtn = document.getElementById('tabOnBtn');
+    const tabOffBtn = document.getElementById('tabOffBtn');
+    const sectionOnSettings = document.getElementById('sectionOnSettings');
+    const sectionOffSettings = document.getElementById('sectionOffSettings');
+
+    // ON Sliders
+    const sliderOnMagExp = document.getElementById('sliderOnMagExp');
+    const sliderOnApExp = document.getElementById('sliderOnApExp');
+    const sliderOnApFloor = document.getElementById('sliderOnApFloor');
+    const sliderOnThreshold = document.getElementById('sliderOnThreshold');
+    const sliderOnWidthMin = document.getElementById('sliderOnWidthMin');
+    const sliderOnWidthScale = document.getElementById('sliderOnWidthScale');
+
+    const valOnMagExp = document.getElementById('valOnMagExp');
+    const valOnApExp = document.getElementById('valOnApExp');
+    const valOnApFloor = document.getElementById('valOnApFloor');
+    const valOnThreshold = document.getElementById('valOnThreshold');
+    const valOnWidthMin = document.getElementById('valOnWidthMin');
+    const valOnWidthScale = document.getElementById('valOnWidthScale');
+
+    // OFF Sliders
+    const sliderOffMagExp = document.getElementById('sliderOffMagExp');
+    const sliderOffFluxFloor = document.getElementById('sliderOffFluxFloor');
+
+    const valOffMagExp = document.getElementById('valOffMagExp');
+    const valOffFluxFloor = document.getElementById('valOffFluxFloor');
+
+    const configJson = document.getElementById('configJson');
+    const copyJsonBtn = document.getElementById('copyJsonBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function getConfigParams() {
+      return {
+        brightnessPerceptionActive: isBrightnessPerceptionActive,
+        brightnessPerceptionMode: {
+          magExponent: parseFloat(sliderOnMagExp.value),
+          apExponent: parseFloat(sliderOnApExp.value),
+          apFloor: parseFloat(sliderOnApFloor.value),
+          iThreshold: parseFloat(sliderOnThreshold.value),
+          widthMin: parseFloat(sliderOnWidthMin.value),
+          widthScale: parseFloat(sliderOnWidthScale.value)
+        },
+        standardPerceptionMode: {
+          magExponent: parseFloat(sliderOffMagExp.value),
+          fluxFloor: parseFloat(sliderOffFluxFloor.value)
+        }
+      };
+    }
+
+    function updateConfigJson() {
+      const cfg = getConfigParams();
+
+      valOnMagExp.innerText = cfg.brightnessPerceptionMode.magExponent.toFixed(2);
+      valOnApExp.innerText = cfg.brightnessPerceptionMode.apExponent.toFixed(2);
+      valOnApFloor.innerText = cfg.brightnessPerceptionMode.apFloor.toFixed(2);
+      valOnThreshold.innerText = cfg.brightnessPerceptionMode.iThreshold.toFixed(3);
+      valOnWidthMin.innerText = cfg.brightnessPerceptionMode.widthMin.toFixed(2);
+      valOnWidthScale.innerText = cfg.brightnessPerceptionMode.widthScale.toFixed(2);
+
+      valOffMagExp.innerText = cfg.standardPerceptionMode.magExponent.toFixed(2);
+      valOffFluxFloor.innerText = cfg.standardPerceptionMode.fluxFloor.toFixed(3);
+
+      configJson.value = JSON.stringify(cfg, null, 2);
+    }
+
+    function renderView(wrapperId, metaId, star, aperture, magPower) {
+      const wrapper = document.getElementById(wrapperId);
+      if (!wrapper) return;
+
+      const cfg = getConfigParams();
+      window.tunerCfg = cfg;
+      isBrightnessPerceptionActive = cfg.brightnessPerceptionActive;
+
+      renderAiryCanvas(wrapper, star, aperture, magPower, false);
+
+      // Update meta text with computed flux/width values
+      const pMode = cfg.brightnessPerceptionMode;
+      const apPower = pMode.apFloor + (2.50 - pMode.apFloor) * Math.pow(Math.max(0, aperture - 50) / 150.0, pMode.apExponent);
+      let f1, f2, wf1, wf2;
+
+      if (cfg.brightnessPerceptionActive) {
+        const b1 = Math.max(0.008, Math.pow(10, -0.4 * (star.mag1 - 0.1) * pMode.magExponent));
+        const b2 = Math.max(0.008, Math.pow(10, -0.4 * (star.mag2 - 0.1) * pMode.magExponent));
+        f1 = b1 * apPower;
+        f2 = b2 * apPower;
+        const e1 = Math.min(1.0, pMode.iThreshold / b1);
+        const e2 = Math.min(1.0, pMode.iThreshold / b2);
+        wf1 = Math.min(1.0, Math.max(pMode.widthMin, (1.0 - pMode.widthScale * Math.sqrt(e1))));
+        wf2 = Math.min(1.0, Math.max(pMode.widthMin, (1.0 - pMode.widthScale * Math.sqrt(e2))));
+      } else {
+        f1 = 1.0;
+        f2 = Math.max(cfg.standardPerceptionMode.fluxFloor, Math.pow(10, -0.4 * (star.mag2 - star.mag1) * cfg.standardPerceptionMode.magExponent));
+        wf1 = 1.0;
+        wf2 = 1.0;
+      }
+
+      const pElem = document.getElementById(metaId.replace('meta', 'p'));
+      const sElem = document.getElementById(metaId.replace('meta', 's'));
+      if (pElem) pElem.innerText = `${(f1 * 100).toFixed(1)}% (${(wf1 * 100).toFixed(0)}% w)`;
+      if (sElem) sElem.innerText = `${(f2 * 100).toFixed(1)}% (${(wf2 * 100).toFixed(0)}% w)`;
+    }
+
+    function renderAll() {
+      updateConfigJson();
+      renderView('viewportRigel60', 'metaRigel60', RIGEL, 60, 300);
+      renderView('viewportRigel200', 'metaRigel200', RIGEL, 200, 300);
+      renderView('viewportStruve60', 'metaStruve60', STRUVE2398, 60, 300);
+      renderView('viewportStruve200', 'metaStruve200', STRUVE2398, 200, 300);
+    }
+
+    // Individual Slider Reset Buttons
+    document.querySelectorAll('.btn-reset-slider').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetId = btn.getAttribute('data-target');
+        const defaultVal = btn.getAttribute('data-default');
+        const targetInput = document.getElementById(targetId);
+        if (targetInput && defaultVal !== null) {
+          targetInput.value = defaultVal;
+          renderAll();
+        }
+      });
+    });
+
+    // Toggle Handler
+    globalBrightnessToggle.addEventListener('click', () => {
+      isBrightnessPerceptionActive = !isBrightnessPerceptionActive;
+      globalBrightnessToggle.classList.toggle('active', isBrightnessPerceptionActive);
+      globalBrightnessToggle.innerText = `Brightness Perception: ${isBrightnessPerceptionActive ? 'ON' : 'OFF'}`;
+      renderAll();
+    });
+
+    // Tab Handlers
+    tabOnBtn.addEventListener('click', () => {
+      tabOnBtn.classList.add('active');
+      tabOffBtn.classList.remove('active');
+      sectionOnSettings.style.display = 'flex';
+      sectionOffSettings.style.display = 'none';
+    });
+
+    tabOffBtn.addEventListener('click', () => {
+      tabOffBtn.classList.add('active');
+      tabOnBtn.classList.remove('active');
+      sectionOffSettings.style.display = 'flex';
+      sectionOnSettings.style.display = 'none';
+    });
+
+    // Range Sliders update on input
+    document.querySelectorAll('input[type="range"]').forEach(input => {
+      input.addEventListener('input', () => {
+        renderAll();
+      });
+    });
+
+    // Reset All button
+    resetBtn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-reset-slider').forEach(btn => {
+        const targetId = btn.getAttribute('data-target');
+        const defaultVal = btn.getAttribute('data-default');
+        const targetInput = document.getElementById(targetId);
+        if (targetInput && defaultVal !== null) {
+          targetInput.value = defaultVal;
+        }
+      });
+      isBrightnessPerceptionActive = true;
+      globalBrightnessToggle.classList.add('active');
+      globalBrightnessToggle.innerText = 'Brightness Perception: ON';
+      renderAll();
+    });
+
+    // Copy JSON button
+    copyJsonBtn.addEventListener('click', () => {
+      configJson.select();
+      document.execCommand('copy');
+      const originalText = copyJsonBtn.innerText;
+      copyJsonBtn.innerText = 'Copied!';
+      setTimeout(() => {
+        copyJsonBtn.innerText = originalText;
+      }, 1500);
+    });
+
+    // Initial render on page load
+    window.addEventListener('load', () => {
+      renderAll();
+    });
+  </script>
+</body>
+</html>
