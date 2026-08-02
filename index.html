@@ -2726,15 +2726,13 @@
           // Small aperture relative to r0: Intact Airy pattern with smooth dancing
           turbulenceSpeckles = [{ dx: tiltPxX, dy: tiltPxY, weight: 1.0 }];
         } else {
-          // Large aperture (80mm - 500mm): Organic chaotic speckle breakup scaling up to 128 distinct speckle seeds
+          // Layered Seeing PSF Speckle Model:
+          // Speckles are distributed and weighted according to a Gaussian seeing envelope profile.
+          // Inner speckles overlap dynamically to form a boiling core envelope without a single static point.
           const intensityFactor = (seeingArcsec / 1.6);
           const numSpeckles = Math.min(128, Math.max(2, Math.round(1 + Math.pow(ratio, 1.35) * 1.8 * intensityFactor)));
           const speckleSpread = 0.35 * ratio * rayleighPx;
-          // Power-law Turbulence Gain: Dynamically compensates for 128-speckle energy dispersion at large apertures (up to 600mm) under heavy seeing (up to 8")
           const turbulenceGain = 1.0 + 0.16 * Math.pow(ratio, 0.60);
-          // Core Floor (0.22): Preserves a persistent solid central core anchor even under severe speckle breakdown
-          const mainWeight = Math.max(0.22, 1.2 - 0.20 * ratio) * turbulenceGain;
-          const subWeight = ((1.05 * (1.0 - (mainWeight / turbulenceGain))) / Math.pow(numSpeckles - 1, 0.82)) * turbulenceGain;
 
           // Fast pseudo-random hash generator for 100% chaotic non-spiral boiling motion
           function hash(k, s) {
@@ -2742,10 +2740,14 @@
             return h - Math.floor(h);
           }
 
-          turbulenceSpeckles = [{ dx: tiltPxX, dy: tiltPxY, weight: mainWeight }];
-          for (let k = 1; k < numSpeckles; k++) {
-            const rSeed = Math.sqrt(hash(k, 1.0)); // Uniform circular area sampling
-            const maxR = speckleSpread * rSeed;
+          let rawSpeckles = [];
+          let sumPsfWeights = 0;
+
+          for (let k = 0; k < numSpeckles; k++) {
+            // Gaussian radial distance distribution (denser toward central core)
+            const u = Math.max(0.0001, hash(k, 1.0));
+            const g = Math.sqrt(-2.0 * Math.log(u)) / 2.2;
+            const maxR = speckleSpread * Math.min(1.1, g);
 
             const w1 = 1.3 + hash(k, 2.0) * 2.7;
             const w2 = 1.1 + hash(k, 3.0) * 3.1;
@@ -2766,8 +2768,20 @@
               sdy = (sdy / dist) * speckleSpread;
             }
 
-            turbulenceSpeckles.push({ dx: tiltPxX + sdx, dy: tiltPxY + sdy, weight: subWeight });
+            // Radial Seeing PSF weight (Gaussian falloff from central core)
+            const rNorm = dist / speckleSpread;
+            const psfW = Math.exp(-2.5 * rNorm * rNorm);
+            sumPsfWeights += psfW;
+
+            rawSpeckles.push({ dx: tiltPxX + sdx, dy: tiltPxY + sdy, psfW: psfW });
           }
+
+          // Normalize weights so integrated energy equals turbulenceGain
+          turbulenceSpeckles = rawSpeckles.map(sp => ({
+            dx: sp.dx,
+            dy: sp.dy,
+            weight: (sp.psfW / sumPsfWeights) * turbulenceGain
+          }));
         }
       }
 
