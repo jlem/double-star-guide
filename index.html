@@ -2726,14 +2726,12 @@
           // Small aperture relative to r0: Intact Airy pattern with smooth dancing
           turbulenceSpeckles = [{ dx: tiltPxX, dy: tiltPxY, weight: 1.0 }];
         } else {
-          // High-Resolution Layered Seeing PSF Speckle Model:
-          // 1. Speckle count scales up to 512 for large apertures (300mm - 600mm) to form a dense, rich boiling cloud.
-          // 2. Speckle spread radius expanded (0.60 * ratio) for broad, realistic seeing footprint.
-          // 3. Power-law intensity gain (1.0 + 0.35 * ratio^0.65) ensures faint secondaries remain vivid at 600mm under heavy seeing.
+          // Ultra-Aggressive Turbulence Gain Scaling:
+          // Power-law gain (1.0 + 1.00 * ratio^0.90) provides massive brightness compensation (~27x boost at 600mm under 8" seeing) so 512-speckle clusters blaze brightly.
           const intensityFactor = (seeingArcsec / 1.6);
           const numSpeckles = Math.min(512, Math.max(2, Math.round(1 + Math.pow(ratio, 1.30) * 2.5 * intensityFactor)));
           const speckleSpread = 0.60 * ratio * rayleighPx;
-          const turbulenceGain = 1.0 + 0.35 * Math.pow(ratio, 0.65);
+          const turbulenceGain = 1.0 + 1.00 * Math.pow(ratio, 0.90);
 
           // Fast pseudo-random hash generator for 100% chaotic non-spiral boiling motion
           function hash(k, s) {
@@ -2769,9 +2767,9 @@
               sdy = (sdy / dist) * speckleSpread;
             }
 
-            // Radial Seeing PSF weight (smooth Gaussian falloff from central core)
+            // Radial Seeing PSF weight (broad Gaussian falloff)
             const rNorm = dist / speckleSpread;
-            const psfW = Math.exp(-1.4 * rNorm * rNorm);
+            const psfW = Math.exp(-0.8 * rNorm * rNorm);
             sumPsfWeights += psfW;
 
             rawSpeckles.push({ dx: tiltPxX + sdx, dy: tiltPxY + sdy, psfW: psfW });
