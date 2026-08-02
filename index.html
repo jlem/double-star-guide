@@ -1350,6 +1350,11 @@
       height: 100%;
       display: block;
     }
+    .sim-modal-svg-wrapper canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
     .sim-zoom-controls {
       position: absolute;
       bottom: 1.25rem;
@@ -2147,6 +2152,179 @@
         </div>
       `;
     }
+    // ========== Physics-Based Airy PSF Rendering (Modal) ==========
+
+    // Bessel J1(x) — Rational polynomial approximation (Abramowitz & Stegun §9.4)
+    function besselJ1(x) {
+      const ax = Math.abs(x);
+      let result;
+      if (ax < 8.0) {
+        const y = x * x;
+        result = x * (72362614232.0 + y * (-7895059235.0 + y * (242396853.1
+          + y * (-2972611.439 + y * (15704.48260 + y * (-30.16036606)))))) /
+          (144725228442.0 + y * (2300535178.0 + y * (18583304.74
+          + y * (99447.43394 + y * (376.9991397 + y * 1.0)))));
+      } else {
+        const z = 8.0 / ax;
+        const y = z * z;
+        const xx = ax - 2.356194491;
+        const p = 1.0 + y * (0.183105e-2 + y * (-0.3516396496e-4
+          + y * (0.2457520174e-5 + y * (-0.240337019e-6))));
+        const q = 0.04687499995 + y * (-0.2002690873e-3 + y * (0.8449199096e-5
+          + y * (-0.88228987e-6 + y * 0.105787412e-6)));
+        result = Math.sqrt(0.636619772 / ax) * (Math.cos(xx) * p - z * Math.sin(xx) * q);
+        if (x < 0) result = -result;
+      }
+      return result;
+    }
+
+    // Airy disk intensity: I(u) = [2·J₁(u)/u]², with I(0) = 1.0
+    function airyIntensity(u) {
+      if (u < 1e-10) return 1.0;
+      const j1 = besselJ1(u);
+      const val = 2.0 * j1 / u;
+      return val * val;
+    }
+
+    // Precomputed Airy intensity LUT for fast per-pixel canvas rendering
+    const AIRY_LUT_SIZE = 8192;
+    const AIRY_LUT_MAX_U = 40.0; // covers ~10 Rayleigh distances (several rings)
+    const AIRY_LUT = new Float64Array(AIRY_LUT_SIZE);
+    (function initAiryLUT() {
+      for (let i = 0; i < AIRY_LUT_SIZE; i++) {
+        AIRY_LUT[i] = airyIntensity((i / AIRY_LUT_SIZE) * AIRY_LUT_MAX_U);
+      }
+    })();
+
+    function airyLookup(u) {
+      if (u < 0) u = -u;
+      if (u >= AIRY_LUT_MAX_U) return 0;
+      const idx = (u / AIRY_LUT_MAX_U) * AIRY_LUT_SIZE;
+      const i = idx | 0; // fast floor
+      if (i >= AIRY_LUT_SIZE - 1) return AIRY_LUT[AIRY_LUT_SIZE - 1];
+      const frac = idx - i;
+      return AIRY_LUT[i] + (AIRY_LUT[i + 1] - AIRY_LUT[i]) * frac;
+    }
+
+    // Parse hex color string to [R, G, B] array (0–255)
+    function hexToRgb(hex) {
+      hex = hex.replace('#', '');
+      return [
+        parseInt(hex.substring(0, 2), 16),
+        parseInt(hex.substring(2, 4), 16),
+        parseInt(hex.substring(4, 6), 16)
+      ];
+    }
+
+    // Render physics-based Airy PSF on a canvas element inside the given wrapper
+    function renderAiryCanvas(wrapper, star, aperture, magFactor) {
+      const wrapperWidth = wrapper ? (wrapper.clientWidth || wrapper.getBoundingClientRect().width || 400) : 400;
+      const size = Math.min(500, Math.round(wrapperWidth)); // cap resolution for performance
+
+      let canvas = wrapper.querySelector('canvas');
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+      }
+      wrapper.innerHTML = '';
+      wrapper.appendChild(canvas);
+
+      canvas.width = size;
+      canvas.height = size;
+
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.createImageData(size, size);
+      const data = imageData.data;
+
+      const rayleigh = 138 / aperture; // arcseconds
+      const isNight = document.body.classList.contains("night-vision");
+
+      // Rayleigh distance in canvas pixels (derived from the SVG viewBox/scale coordinate system)
+      const viewBoxSize = 170 * (wrapperWidth / 400);
+      const scaleUsed = 0.125 * (magFactor / 2.0);
+      const rayleighPx = size * 12.5 * scaleUsed / viewBoxSize;
+
+      // Airy u-parameter scale: first zero at u = 1.22π ≈ 3.8317 corresponds to 1 Rayleigh
+      const airyScale = 3.8317 / rayleighPx;
+
+      // Star positions in canvas pixels (centered, physical separation, no visual compression)
+      const cx = size / 2;
+      const cy = size / 2;
+      const angleRad = (star.pa - 90) * (Math.PI / 180);
+      const sepCanvasPx = (star.sep / rayleigh) * rayleighPx;
+      const halfSep = sepCanvasPx / 2;
+
+      const sx1 = cx - halfSep * Math.cos(angleRad);
+      const sy1 = cy - halfSep * Math.sin(angleRad);
+      const sx2 = cx + halfSep * Math.cos(angleRad);
+      const sy2 = cy + halfSep * Math.sin(angleRad);
+
+      // Star fluxes normalized so the brightest star has flux = 1.0
+      const flux1 = Math.pow(10, -0.4 * star.mag1);
+      const flux2 = Math.pow(10, -0.4 * star.mag2);
+      const maxFlux = Math.max(flux1, flux2);
+      const nFlux1 = flux1 / maxFlux;
+      const nFlux2 = flux2 / maxFlux;
+
+      // Star colors
+      const c1 = isNight ? '#ff3333' : star.color1;
+      const c2 = isNight ? '#ff3333' : star.color2;
+      const rgb1 = hexToRgb(c1);
+      const rgb2 = hexToRgb(c2);
+
+      // Display stretch: power-law gamma compresses the huge dynamic range
+      // so faint diffraction rings are visible alongside the bright core
+      const gamma = 0.32;
+      const saturationMix = 0.5; // desaturate to match eyepiece appearance
+
+      // Skip pixels beyond this radius from both stars (Airy function is negligible)
+      const maxR = AIRY_LUT_MAX_U / airyScale;
+      const maxR2 = maxR * maxR;
+
+      for (let py = 0; py < size; py++) {
+        for (let px = 0; px < size; px++) {
+          const dx1 = px - sx1;
+          const dy1 = py - sy1;
+          const d1sq = dx1 * dx1 + dy1 * dy1;
+
+          const dx2 = px - sx2;
+          const dy2 = py - sy2;
+          const d2sq = dx2 * dx2 + dy2 * dy2;
+
+          // Early exit: both stars too far away — pixel stays black
+          if (d1sq > maxR2 && d2sq > maxR2) continue;
+
+          // Compute Airy intensity from each star (incoherent sum)
+          const i1 = d1sq <= maxR2 ? airyLookup(Math.sqrt(d1sq) * airyScale) * nFlux1 : 0;
+          const i2 = d2sq <= maxR2 ? airyLookup(Math.sqrt(d2sq) * airyScale) * nFlux2 : 0;
+
+          // Per-channel intensity (weighted by star color)
+          let rr = i1 * rgb1[0] / 255 + i2 * rgb2[0] / 255;
+          let gg = i1 * rgb1[1] / 255 + i2 * rgb2[1] / 255;
+          let bb = i1 * rgb1[2] / 255 + i2 * rgb2[2] / 255;
+
+          // Power-law stretch to bring out diffraction rings
+          rr = Math.pow(Math.min(1, rr), gamma);
+          gg = Math.pow(Math.min(1, gg), gamma);
+          bb = Math.pow(Math.min(1, bb), gamma);
+
+          // Desaturate toward luminance (simulates eyepiece color perception)
+          const lum = 0.299 * rr + 0.587 * gg + 0.114 * bb;
+          rr = lum + (rr - lum) * saturationMix;
+          gg = lum + (gg - lum) * saturationMix;
+          bb = lum + (bb - lum) * saturationMix;
+
+          const idx = (py * size + px) * 4;
+          data[idx]     = Math.min(255, rr * 255 + 0.5) | 0;
+          data[idx + 1] = Math.min(255, gg * 255 + 0.5) | 0;
+          data[idx + 2] = Math.min(255, bb * 255 + 0.5) | 0;
+          data[idx + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+    // ========== End Physics-Based Airy PSF Rendering ==========
 
     // Render Eyepiece Simulation SVG Viewport at 2x/mm Aperture Power (or zoomed magFactor)
     function createEyepieceSimSVG(star, aperture, scaleOverride = null, viewBoxSize = null, magFactor = 2.0) {
@@ -2329,16 +2507,13 @@
       const wrapper = document.getElementById('simModalSvgWrapper');
       const wrapperWidth = wrapper ? (wrapper.clientWidth || wrapper.getBoundingClientRect().width || 400) : 400;
       // Reference standard: 170 viewBox units at 400px container width.
-      // Scaling viewBoxSize linearly with container width maintains a constant screen pixel scale (400/170 = 2.3529 px/unit).
       // Magnification zoom scales scaleUsed linearly with (modalMagFactor / 2.0).
       const viewBoxSize = 170 * (wrapperWidth / 400);
       const scaleUsed = 0.125 * (modalMagFactor / 2.0);
 
-      const rawHtml = createEyepieceSimSVG(star, userAperture, scaleUsed, viewBoxSize, modalMagFactor);
-      
-      const svgMatch = rawHtml.match(/<svg[\s\S]*<\/svg>/);
-      if (svgMatch && wrapper) {
-        wrapper.innerHTML = svgMatch[0];
+      // Render physics-based Airy PSF on canvas (replaces SVG for the modal)
+      if (wrapper) {
+        renderAiryCanvas(wrapper, star, userAperture, modalMagFactor);
       }
 
       // Update Modal Stats
