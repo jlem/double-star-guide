@@ -105,8 +105,9 @@
 
   <div class="controls">
     <label for="zoomSlider">Field of View:</label>
-    <input type="range" id="zoomSlider" min="1" max="100" value="30" step="1">
-    <span id="zoomLabel" style="font-family: monospace; color: var(--accent-blue);">30 arcsec</span>
+    <input type="range" id="zoomSlider" min="10" max="3600" value="3600" step="10">
+    <span id="zoomLabel" style="font-family: monospace; color: var(--accent-blue);">3600 arcsec</span>
+    <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: auto;">(3600" = 1&deg; True FOV &approx; 50x mag)</span>
   </div>
 
   <div class="grid">
