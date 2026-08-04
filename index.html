@@ -1582,9 +1582,10 @@
         font-size: 0.8rem;
       }
 
-      /* Hide telescope setup panel & resolution strip on mobile as requested */
+      /* Hide telescope setup panel, resolution strip & aperture chip on mobile as requested */
       .telescope-panel,
-      .resolution-strip {
+      .resolution-strip,
+      .chip[data-filter="aperture-appropriate"] {
         display: none !important;
       }
 
@@ -1737,8 +1738,19 @@
         color: var(--text-main);
       }
 
-      .m-season-pill {
-        text-transform: capitalize;
+      .m-card .season-badge {
+        font-size: 0.68rem;
+        padding: 0.05rem 0.35rem;
+        border-radius: 4px;
+        gap: 0.2rem;
+        line-height: 1.2;
+      }
+
+      .m-card .appearance-badge {
+        font-size: 0.68rem !important;
+        padding: 0.05rem 0.35rem !important;
+        border-radius: 4px !important;
+        line-height: 1.2 !important;
       }
 
       .m-card-sim-btn {
@@ -2342,7 +2354,8 @@
     // State Variables
     let DOUBLE_STARS_DATA = [];
     let currentData = [];
-    let activeFilterChip = "all";
+    let activePropertyFilter = "all";
+    let activeSeasonFilter = "all";
     let isNightVision = false;
     let userAperture = null;
     let expandedStarId = null;
@@ -3694,11 +3707,11 @@
       renderTable();
     }
 
-    // Reset Button State Manager (Always visible, disabled when at defaults)
-    function updateResetButtonState() {
+    // Reset Button State Manager
+    function updateResetButton() {
       const isSearchChanged = searchInput.value.trim() !== "";
       const isConstChanged = constellationSelect.value !== "ALL";
-      const isChipChanged = activeFilterChip !== "all";
+      const isChipChanged = activePropertyFilter !== "all" || activeSeasonFilter !== "all";
       const isSortChanged = activeSortKey !== "mag1" || activeSortDir !== "asc";
       const isApertureChanged = userAperture !== 60;
 
@@ -3711,7 +3724,8 @@
     function resetAllFilters() {
       searchInput.value = "";
       apertureInput.value = "60";
-      activeFilterChip = "all";
+      activePropertyFilter = "all";
+      activeSeasonFilter = "all";
       activeSortKey = "mag1";
       activeSortDir = "asc";
 
@@ -3738,22 +3752,26 @@
 
         const matchesConst = (selectedConst === "ALL") || (star.constellation === selectedConst);
 
-        let matchesChip = true;
+        let matchesProperty = true;
         const delta = Math.abs(star.mag1 - star.mag2);
 
-        if (activeFilterChip === "aperture-appropriate") {
+        if (activePropertyFilter === "aperture-appropriate") {
           const ap = userAperture || 60;
           const reqMinSep = (114 + 24 * Math.max(0, delta - 0.5)) / ap;
-          matchesChip = star.sep >= reqMinSep;
+          matchesProperty = star.sep >= reqMinSep;
         }
-        else if (activeFilterChip === "showcase") matchesChip = star.showcase;
-        else if (activeFilterChip === "high-contrast") matchesChip = delta >= 2.0 || star.colorDesc.includes("Gold & Sapphire") || star.colorDesc.includes("Amber") || star.colorDesc.includes("Orange");
-        else if (activeFilterChip === "twins") matchesChip = delta <= 0.5;
-        else if (activeFilterChip === "tight") matchesChip = star.sep >= 1.2 && star.sep <= 5.0;
-        else if (activeFilterChip === "wide") matchesChip = star.sep >= 20.0 && star.sep <= 50.0;
-        else if (["spring", "summer", "autumn", "winter"].includes(activeFilterChip)) matchesChip = star.season === activeFilterChip;
+        else if (activePropertyFilter === "showcase") matchesProperty = star.showcase;
+        else if (activePropertyFilter === "high-contrast") matchesProperty = delta >= 2.0 || star.colorDesc.includes("Gold & Sapphire") || star.colorDesc.includes("Amber") || star.colorDesc.includes("Orange");
+        else if (activePropertyFilter === "twins") matchesProperty = delta <= 0.5;
+        else if (activePropertyFilter === "tight") matchesProperty = star.sep >= 1.2 && star.sep <= 5.0;
+        else if (activePropertyFilter === "wide") matchesProperty = star.sep >= 20.0 && star.sep <= 50.0;
 
-        return matchesSearch && matchesConst && matchesChip;
+        let matchesSeason = true;
+        if (activeSeasonFilter !== "all") {
+          matchesSeason = star.season === activeSeasonFilter;
+        }
+
+        return matchesSearch && matchesConst && matchesProperty && matchesSeason;
       });
 
       const seasonOrder = { spring: 1, summer: 2, autumn: 3, winter: 4 };
@@ -3901,7 +3919,7 @@
                   <span class="m-stat-pill"><strong>Mag:</strong> ${star.mag1.toFixed(1)} / ${star.mag2.toFixed(1)}</span>
                   <span class="m-stat-pill"><strong>&Delta;m:</strong> ${deltaValue}</span>
                   <span class="m-stat-pill"><strong>Sep:</strong> ${star.sep.toFixed(1)}"</span>
-                  <span class="m-stat-pill m-season-pill">${star.season}</span>
+                  ${getSeasonBadge(star.season)}
                 </div>
               </div>
               <button class="m-card-sim-btn" onclick="event.stopPropagation(); openSimulationModal('${star.id}')" title="Simulate in Telescope">
@@ -4014,13 +4032,39 @@
 
       document.querySelectorAll(".chip").forEach(chip => {
         chip.addEventListener("click", () => {
-          document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-          chip.classList.add("active");
-          activeFilterChip = chip.getAttribute("data-filter");
-          
-          const isSeason = ["spring", "summer", "autumn", "winter"].includes(activeFilterChip);
-          populateConstellationDropdown(isSeason ? activeFilterChip : null);
-          
+          const filterVal = chip.getAttribute("data-filter");
+          const isSeason = ["spring", "summer", "autumn", "winter"].includes(filterVal);
+
+          if (filterVal === "all") {
+            activePropertyFilter = "all";
+            activeSeasonFilter = "all";
+          } else if (isSeason) {
+            if (activeSeasonFilter === filterVal) {
+              activeSeasonFilter = "all";
+            } else {
+              activeSeasonFilter = filterVal;
+            }
+          } else {
+            if (activePropertyFilter === filterVal) {
+              activePropertyFilter = "all";
+            } else {
+              activePropertyFilter = filterVal;
+            }
+          }
+
+          // Sync active class across all chips
+          document.querySelectorAll(".chip").forEach(c => {
+            const val = c.getAttribute("data-filter");
+            if (val === "all") {
+              c.classList.toggle("active", activePropertyFilter === "all" && activeSeasonFilter === "all");
+            } else if (["spring", "summer", "autumn", "winter"].includes(val)) {
+              c.classList.toggle("active", activeSeasonFilter === val);
+            } else {
+              c.classList.toggle("active", activePropertyFilter === val);
+            }
+          });
+
+          populateConstellationDropdown(activeSeasonFilter !== "all" ? activeSeasonFilter : null);
           renderTable();
         });
       });
