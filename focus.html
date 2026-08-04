@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Defocus Simulation - 100mm f/7 Refractor</title>
+  <style>
+    :root {
+      --bg-body: #07090e;
+      --bg-card: #0f1420;
+      --border-color: #202b42;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-blue: #3b82f6;
+    }
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    h1 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.8rem;
+    }
+    p {
+      color: var(--text-muted);
+      margin: 0;
+    }
+    .controls {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .controls label {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .controls input[type="range"] {
+      width: 200px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+      max-width: 1200px;
+      width: 100%;
+    }
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .panel h2 {
+      margin: 0 0 1rem 0;
+      font-size: 1.2rem;
+      color: var(--accent-blue);
+    }
+    .canvas-wrapper {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #000;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+      position: relative;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .fov-label {
+      margin-top: 1rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Sirius Defocus Simulation</h1>
+    <p>100mm Perfect Refractor (D=100mm, &lambda;=550nm)</p>
+  </header>
+
+  <div class="controls">
+    <label for="zoomSlider">Field of View:</label>
+    <input type="range" id="zoomSlider" min="1" max="100" value="30" step="1">
+    <span id="zoomLabel" style="font-family: monospace; color: var(--accent-blue);">30 arcsec</span>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Perfect Focus (0 Waves)</h2>
+      <div class="canvas-wrapper"><canvas id="canvas0" width="600" height="600"></canvas></div>
+      <div class="fov-label" id="fov0"></div>
+    </div>
+    <div class="panel">
+      <h2>5 Waves Defocus</h2>
+      <div class="canvas-wrapper"><canvas id="canvas5" width="600" height="600"></canvas></div>
+      <div class="fov-label" id="fov5"></div>
+    </div>
+    <div class="panel">
+      <h2>10 Waves Defocus</h2>
+      <div class="canvas-wrapper"><canvas id="canvas10" width="600" height="600"></canvas></div>
+      <div class="fov-label" id="fov10"></div>
+    </div>
+    <div class="panel">
+      <h2>20 Waves Defocus</h2>
+      <div class="canvas-wrapper"><canvas id="canvas20" width="600" height="600"></canvas></div>
+      <div class="fov-label" id="fov20"></div>
+    </div>
+  </div>
+
+  <script>
+    // Physics constants
+    const LAMBDA = 550e-9; // 550nm
+    const APERTURE = 0.100; // 100mm
+    const RAYLEIGH_ARCSEC = (1.22 * LAMBDA / APERTURE) * (180 / Math.PI) * 3600; // ~1.38"
+
+    function besselJ0(x) {
+      let ax = Math.abs(x);
+      if (ax < 8.0) {
+        let y = x * x;
+        let ans1 = 57568490574.0 + y * (-13362590354.0 + y * (651619640.7 + y * (-11214424.18 + y * (77392.33017 + y * (-184.9052456)))));
+        let ans2 = 57568490411.0 + y * (1029532985.0 + y * (9494680.718 + y * (59272.64853 + y * (267.8532712 + y * 1.0))));
+        return ans1 / ans2;
+      } else {
+        let z = 8.0 / ax;
+        let y = z * z;
+        let xx = ax - 0.785398164;
+        let ans1 = 1.0 + y * (-0.1098628627e-2 + y * (0.2734510407e-4 + y * (-0.2073370639e-5 + y * 0.2093887211e-6)));
+        let ans2 = -0.1562499995e-1 + y * (0.1430488765e-3 + y * (-0.6911147651e-5 + y * (0.7621095161e-6 + y * (-0.934935152e-7))));
+        return Math.sqrt(0.636619772 / ax) * (Math.cos(xx) * ans1 - z * Math.sin(xx) * ans2);
+      }
+    }
+
+    // Returns normalized intensity I(u, w) where w is waves of defocus
+    function computeDefocusedPSF(u, w) {
+      if (w === 0 && u === 0) return 1.0;
+      
+      const N = 800;
+      const dr = 1.0 / N;
+      let sumA = 0;
+      let sumB = 0;
+      for (let i = 0; i < N; i++) {
+        let r = (i + 0.5) * dr;
+        let phase = 2 * Math.PI * w * r * r;
+        let j0 = besselJ0(u * r);
+        sumA += Math.cos(phase) * j0 * r * dr;
+        sumB += Math.sin(phase) * j0 * r * dr;
+      }
+      sumA *= 2;
+      sumB *= 2;
+      return sumA * sumA + sumB * sumB;
+    }
+
+    // Precompute LUT for a given defocus state
+    function generateLUT(w, maxU) {
+      const size = 2048;
+      const lut = new Float32Array(size);
+      for (let i = 0; i < size; i++) {
+        let u = (i / (size - 1)) * maxU;
+        lut[i] = computeDefocusedPSF(u, w);
+      }
+      return { lut, maxU, size };
+    }
+
+    function sampleLUT(lutObj, u) {
+      if (u >= lutObj.maxU) return 0;
+      const t = (u / lutObj.maxU) * (lutObj.size - 1);
+      const idx = Math.floor(t);
+      const frac = t - idx;
+      if (idx >= lutObj.size - 1) return lutObj.lut[lutObj.size - 1];
+      return lutObj.lut[idx] + (lutObj.lut[idx + 1] - lutObj.lut[idx]) * frac;
+    }
+
+    // We need varying maxU depending on waves of defocus to cover the whole pattern
+    // Geometric boundary is approx u = 4 * pi * w. We add 20% margin.
+    const states = [
+      { id: 'canvas0',  w: 0,  maxU: 80 },
+      { id: 'canvas5',  w: 5,  maxU: 120 },
+      { id: 'canvas10', w: 10, maxU: 200 },
+      { id: 'canvas20', w: 20, maxU: 400 }
+    ];
+
+    const luts = {};
+    states.forEach(st => {
+      console.log(`Generating LUT for ${st.w} waves...`);
+      luts[st.w] = generateLUT(st.w, st.maxU);
+    });
+
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomLabel = document.getElementById('zoomLabel');
+
+    function renderAll() {
+      const fovArcsec = parseFloat(zoomSlider.value);
+      zoomLabel.innerText = `${fovArcsec.toFixed(1)} arcsec`;
+      
+      states.forEach(st => {
+        renderCanvas(st.id, st.w, fovArcsec);
+        document.getElementById(`fov${st.w}`).innerText = `Field of View: ${fovArcsec.toFixed(1)}"`;
+      });
+    }
+
+    function renderCanvas(canvasId, w, fovArcsec) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      const imgData = ctx.createImageData(width, height);
+      const data = imgData.data;
+
+      const lutObj = luts[w];
+      
+      // u scale factor: u = 3.8317 is 1 Rayleigh (1.38 arcsec)
+      // center to edge of canvas is (fovArcsec / 2) arcsec
+      // So at the edge, u = (fovArcsec / 2) / RAYLEIGH_ARCSEC * 3.8317
+      const maxUOnCanvas = (fovArcsec / 2) / RAYLEIGH_ARCSEC * 3.8317;
+      const cx = width / 2;
+      const cy = height / 2;
+      const maxR = Math.min(width, height) / 2;
+
+      // Brightness scaling: Sirius is very bright. 
+      // We use a power curve. Heavily defocused stars drop in peak intensity.
+      // A point source energy is conserved. Peak intensity of defocus drops by ~ 1/w^2 for large w.
+      // Actually we will auto-expose or use a non-linear gamma so rings are visible.
+      // I(u) ^ 0.3 looks good for high dynamic range.
+      const gamma = 0.35;
+      // We apply an exposure multiplier to simulate Sirius' brightness
+      // Focus peak is 1.0. Sirius is blindingly bright, so we saturate the core.
+      const exposure = 25.0; 
+
+      for (let y = 0; y < height; y++) {
+        let dy = y - cy;
+        for (let x = 0; x < width; x++) {
+          let dx = x - cx;
+          let r = Math.sqrt(dx*dx + dy*dy);
+          let u = (r / maxR) * maxUOnCanvas;
+          
+          let iRaw = sampleLUT(lutObj, u);
+          let iExposed = iRaw * exposure;
+          
+          // non-linear tone mapping
+          let mapped = Math.pow(Math.max(0, iExposed), gamma);
+          
+          // Add a subtle blue/white tint (Sirius is spectral type A1V)
+          // Core is white, halo shifts slightly blue
+          let val = Math.min(255, mapped * 255);
+          
+          // Slight blue tint: Red = val*0.95, Green = val*0.98, Blue = val
+          let rCol = Math.min(255, val * 0.95);
+          let gCol = Math.min(255, val * 0.98);
+          let bCol = Math.min(255, val);
+
+          const idx = (y * width + x) * 4;
+          data[idx] = rCol;
+          data[idx+1] = gCol;
+          data[idx+2] = bCol;
+          data[idx+3] = 255;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    zoomSlider.addEventListener('input', renderAll);
+    
+    // Initial Render
+    setTimeout(renderAll, 50);
+
+  </script>
+</body>
+</html>
