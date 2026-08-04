@@ -1434,14 +1434,13 @@
       box-sizing: border-box;
     }
     .sim-modal-svg-wrapper {
-      aspect-ratio: 1 / 1;
-      flex: 1;
-      width: 100%;
-      height: 100%;
-      max-width: 100%;
-      max-height: calc(100% - 4.5rem);
+      aspect-ratio: 1 / 1 !important;
+      width: auto !important;
+      height: auto !important;
+      max-width: min(100%, 540px) !important;
+      max-height: min(calc(100% - 4.5rem), 540px) !important;
       background: #000;
-      border-radius: 50%;
+      border-radius: 50% !important;
       box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.05);
       overflow: hidden;
       display: flex;
@@ -1449,8 +1448,8 @@
       justify-content: center;
       box-sizing: border-box;
       cursor: ns-resize;
-      margin: auto;
-      flex-shrink: 1;
+      margin: auto !important;
+      flex-shrink: 0 !important;
     }
     .sim-modal-svg-wrapper svg {
       width: 100%;
@@ -1823,8 +1822,10 @@
         cursor: pointer;
         box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
       }
+    }
 
-      /* Modal Mobile Layout: Single outer scrollbar, full screen overlay */
+    /* Modal Stacking Breakpoint (< 1280px): Triggers on screens narrower than 1080p */
+    @media (max-width: 1280px) {
       .sim-modal {
         position: fixed !important;
         top: 0 !important;
@@ -1884,8 +1885,8 @@
       }
 
       .sim-mag-slider-container {
-        width: min(76vw, 290px) !important;
-        max-width: 290px !important;
+        width: min(76vw, 320px) !important;
+        max-width: 320px !important;
         margin: 0.6rem auto 0 auto !important;
       }
 
@@ -1894,8 +1895,8 @@
       }
 
       .sim-modal-svg-wrapper {
-        width: min(82vw, 320px) !important;
-        height: min(82vw, 320px) !important;
+        width: min(82vw, 420px) !important;
+        height: min(82vw, 420px) !important;
         aspect-ratio: 1 / 1 !important;
         flex-shrink: 0 !important;
         margin: 0 auto !important;
