@@ -1619,18 +1619,16 @@
 
       .chips-container {
         display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        gap: 0.3rem;
-        padding-bottom: 3px;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        overflow: visible;
       }
 
       .chip {
-        font-size: 0.72rem;
-        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.45rem;
         white-space: nowrap;
-        flex-shrink: 0;
+        border-radius: 12px;
       }
 
       .table-header-controls {
