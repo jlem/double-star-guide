@@ -1519,6 +1519,41 @@
       background: #cc0000;
     }
 
+    .sim-mag-slider-container {
+      width: 100%;
+      max-width: 320px;
+      margin: 0.6rem auto 0 auto;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 0.5rem 0.75rem;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      z-index: 10;
+      user-select: none;
+    }
+    .sim-mag-slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .sim-mag-slider-header strong {
+      color: #38bdf8;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+    .sim-mag-slider {
+      width: 100%;
+      cursor: pointer;
+      accent-color: var(--accent-blue, #3b82f6);
+    }
+
     .scope-type-toggle {
       display: flex;
       flex-direction: column;
@@ -2015,6 +2050,15 @@
             <button class="sim-zoom-reset-btn" id="simZoomResetBtn" style="display: none;" title="Reset magnification to default 250x">
               ↺ Reset Zoom
             </button>
+          </div>
+
+          <!-- Touch-Friendly Eyepiece Magnification Range Slider -->
+          <div class="sim-mag-slider-container" id="simMagSliderContainer">
+            <div class="sim-mag-slider-header">
+              <span>Eyepiece Magnification:</span>
+              <strong id="simMagSliderVal">250x (4.2x/mm)</strong>
+            </div>
+            <input type="range" id="simMagSlider" min="50" max="3000" step="10" value="250" class="sim-mag-slider">
           </div>
         </div>
 
@@ -3533,6 +3577,9 @@
       const isDeviated = Math.abs(currentModalPower - 250.0) > 1.0;
       const resetBtn = document.getElementById('simZoomResetBtn');
       const zoomBadge = document.getElementById('simZoomBadge');
+      const magSlider = document.getElementById('simMagSlider');
+      const magSliderVal = document.getElementById('simMagSliderVal');
+
       if (resetBtn) {
         resetBtn.style.display = isDeviated ? 'inline-flex' : 'none';
         resetBtn.setAttribute('title', 'Reset magnification to default 250x');
@@ -3540,6 +3587,13 @@
       if (zoomBadge) {
         zoomBadge.innerText = `${Math.round(power)}x (${xPerMm}x/mm)`;
         zoomBadge.style.color = isDeviated ? '#38bdf8' : '#94a3b8';
+      }
+      if (magSlider && magSliderVal) {
+        const maxMag = Math.round(userAperture * 5.0);
+        magSlider.min = 50;
+        magSlider.max = maxMag;
+        magSlider.value = Math.round(power);
+        magSliderVal.innerText = `${Math.round(power)}x (${xPerMm}x/mm)`;
       }
 
       // Sync Optical Design toggle active button state in modal sidebar
@@ -4232,6 +4286,17 @@
         resetBtn.addEventListener('click', () => {
           currentModalPower = 250.0;
           renderSimulationModal();
+        });
+      }
+
+      const magSlider = document.getElementById('simMagSlider');
+      if (magSlider) {
+        magSlider.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          if (val && val > 0) {
+            currentModalPower = val;
+            renderSimulationModal(true);
+          }
         });
       }
 
