@@ -105,9 +105,9 @@
 
   <div class="controls">
     <label for="zoomSlider">Field of View:</label>
-    <input type="range" id="zoomSlider" min="10" max="3600" value="3600" step="10">
-    <span id="zoomLabel" style="font-family: monospace; color: var(--accent-blue);">3600 arcsec</span>
-    <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: auto;">(3600" = 1&deg; True FOV &approx; 50x mag)</span>
+    <input type="range" id="zoomSlider" min="10" max="1000" value="1000" step="10">
+    <span id="zoomLabel" style="font-family: monospace; color: var(--accent-blue);">1000 arcsec</span>
+    <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: auto;">(1000" = max FOV)</span>
   </div>
 
   <div class="grid">
@@ -115,11 +115,6 @@
       <h2>Perfect Focus (0 Waves)</h2>
       <div class="canvas-wrapper"><canvas id="canvas0" width="600" height="600"></canvas></div>
       <div class="fov-label" id="fov0"></div>
-    </div>
-    <div class="panel">
-      <h2>5 Waves Defocus</h2>
-      <div class="canvas-wrapper"><canvas id="canvas5" width="600" height="600"></canvas></div>
-      <div class="fov-label" id="fov5"></div>
     </div>
     <div class="panel">
       <h2>10 Waves Defocus</h2>
@@ -130,6 +125,11 @@
       <h2>20 Waves Defocus</h2>
       <div class="canvas-wrapper"><canvas id="canvas20" width="600" height="600"></canvas></div>
       <div class="fov-label" id="fov20"></div>
+    </div>
+    <div class="panel">
+      <h2>40 Waves Defocus</h2>
+      <div class="canvas-wrapper"><canvas id="canvas40" width="600" height="600"></canvas></div>
+      <div class="fov-label" id="fov40"></div>
     </div>
   </div>
 
@@ -200,9 +200,9 @@
     // Geometric boundary is approx u = 4 * pi * w. We add 20% margin.
     const states = [
       { id: 'canvas0',  w: 0,  maxU: 80 },
-      { id: 'canvas5',  w: 5,  maxU: 120 },
       { id: 'canvas10', w: 10, maxU: 200 },
-      { id: 'canvas20', w: 20, maxU: 400 }
+      { id: 'canvas20', w: 20, maxU: 400 },
+      { id: 'canvas40', w: 40, maxU: 800 }
     ];
 
     const luts = {};
@@ -248,8 +248,10 @@
       // Actually we will auto-expose or use a non-linear gamma so rings are visible.
       // I(u) ^ 0.3 looks good for high dynamic range.
       // We apply an exposure multiplier to simulate Sirius' brightness
-      // Focus peak is 1.0. Sirius is blindingly bright, so we saturate the core.
-      const exposure = 25.0; 
+      // Focus peak is 1.0. We boost out-of-focus states proportionally so rings remain highly visible
+      const baseExposure = 25.0; 
+      // Defocused peak intensity drops rapidly. We apply a brightening boost scaling with w.
+      const exposure = baseExposure * (1.0 + (w * w) * 0.15);
 
       for (let y = 0; y < height; y++) {
         let dy = y - cy;
