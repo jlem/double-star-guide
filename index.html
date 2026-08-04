@@ -1462,18 +1462,11 @@
       object-fit: contain;
       display: block;
     }
-    .sim-zoom-bar-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      margin: 0.6rem auto 0 auto;
-      z-index: 10;
-    }
     .sim-mag-slider-container {
-      width: 320px;
+      position: relative;
+      width: 100%;
       max-width: 320px;
+      margin: 0.6rem auto 0 auto;
       background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
@@ -1484,8 +1477,8 @@
       display: flex;
       flex-direction: column;
       gap: 0.3rem;
+      z-index: 10;
       user-select: none;
-      margin: 0;
     }
     .sim-mag-slider-header {
       display: flex;
@@ -1506,10 +1499,10 @@
     }
     .sim-zoom-reset-box {
       position: absolute;
-      left: calc(50% + 168px);
-      top: 0;
-      bottom: 0;
-      height: 100%;
+      top: -1px;
+      bottom: -1px;
+      left: calc(100% + 8px);
+      height: calc(100% + 2px);
       aspect-ratio: 1 / 1;
       background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(8px);
@@ -1517,8 +1510,9 @@
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 12px;
       color: var(--accent-blue, #3b82f6);
-      font-size: 1.1rem;
+      font-size: 1.45rem;
       font-weight: 700;
+      line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1891,11 +1885,11 @@
       .sim-mag-slider-container {
         width: min(76vw, 290px) !important;
         max-width: 290px !important;
-        margin: 0 !important;
+        margin: 0.6rem auto 0 auto !important;
       }
 
       .sim-zoom-reset-box {
-        left: calc(50% + min(38vw, 145px) + 8px) !important;
+        left: calc(100% + 8px) !important;
       }
 
       .sim-modal-svg-wrapper {
@@ -2087,14 +2081,12 @@
           </div>
 
           <!-- Eyepiece Magnification Control (Slider + Matching Reset Box to the right) -->
-          <div class="sim-zoom-bar-wrapper">
-            <div class="sim-mag-slider-container" id="simMagSliderContainer">
-              <div class="sim-mag-slider-header">
-                <span>Eyepiece Zoom:</span>
-                <strong id="simMagSliderVal">250x (4.2x/mm)</strong>
-              </div>
-              <input type="range" id="simMagSlider" min="50" max="3000" step="10" value="250" class="sim-mag-slider">
+          <div class="sim-mag-slider-container" id="simMagSliderContainer">
+            <div class="sim-mag-slider-header">
+              <span>Eyepiece Zoom:</span>
+              <strong id="simMagSliderVal">250x (4.2x/mm)</strong>
             </div>
+            <input type="range" id="simMagSlider" min="50" max="3000" step="10" value="250" class="sim-mag-slider">
 
             <button class="sim-zoom-reset-box" id="simZoomResetBtn" style="visibility: hidden; opacity: 0;" title="Reset magnification to default 250x">
               ↺
