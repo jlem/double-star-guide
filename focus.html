@@ -248,10 +248,9 @@
       // Actually we will auto-expose or use a non-linear gamma so rings are visible.
       // I(u) ^ 0.3 looks good for high dynamic range.
       // We apply an exposure multiplier to simulate Sirius' brightness
-      // Focus peak is 1.0. We boost out-of-focus states proportionally so rings remain highly visible
-      const baseExposure = 25.0; 
-      // Defocused peak intensity drops rapidly. We apply a brightening boost scaling with w.
-      const exposure = baseExposure * (1.0 + (w * w) * 0.15);
+      // Focus peak is 1.0. We boost out-of-focus states linearly.
+      // This leaves them dimmer as they get more out of focus, but still visible.
+      const exposure = 25.0 + (w * 75.0);
 
       for (let y = 0; y < height; y++) {
         let dy = y - cy;
