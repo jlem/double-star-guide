@@ -3550,6 +3550,12 @@
     }
 
     function closeSimulationModal() {
+      if (isTurbulenceActive) {
+        isTurbulenceActive = false;
+        try {
+          sessionStorage.setItem('double_stars_turbulence', 'false');
+        } catch (e) {}
+      }
       stopTurbulenceAnimation();
       document.getElementById('simModalBackdrop').classList.remove('active');
       document.getElementById('simModal').classList.remove('active');
