@@ -4111,13 +4111,24 @@
       });
 
       document.querySelectorAll(".preset-chip").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          e.stopImmediatePropagation();
           if (apertureDebounceTimer) clearTimeout(apertureDebounceTimer);
           const val = btn.getAttribute("data-aperture");
+          
+          // Instantly update UI state for snappy feedback
           apertureInput.value = val;
           document.getElementById('modalApertureInput').value = val;
-          updateTelescopeSetup();
-          if (currentModalStarId) renderSimulationModal();
+          document.querySelectorAll(".preset-chip").forEach(chip => {
+            chip.classList.toggle("active", chip.getAttribute("data-aperture") === val);
+          });
+          
+          // Defer heavy table & canvas render to allow browser to paint active state first
+          setTimeout(() => {
+            updateTelescopeSetup();
+            if (currentModalStarId) renderSimulationModal();
+          }, 15);
         });
       });
 
@@ -4446,23 +4457,7 @@
         handleDebouncedApertureInput(e.target.value, false);
       });
 
-      document.querySelectorAll(".modal-preset-chip").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          if (apertureDebounceTimer) clearTimeout(apertureDebounceTimer);
-          const val = btn.getAttribute("data-aperture");
-          const parsed = parseFloat(val);
-          if (parsed && parsed > 0) {
-            userAperture = parsed;
-            document.getElementById('modalApertureInput').value = val;
-            apertureInput.value = val;
-            updateTelescopeSetup();
-            if (currentModalStarId) {
-              renderSimulationModal();
-            }
-          }
-        });
-      });
+
 
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
