@@ -247,7 +247,6 @@
       // A point source energy is conserved. Peak intensity of defocus drops by ~ 1/w^2 for large w.
       // Actually we will auto-expose or use a non-linear gamma so rings are visible.
       // I(u) ^ 0.3 looks good for high dynamic range.
-      const gamma = 0.35;
       // We apply an exposure multiplier to simulate Sirius' brightness
       // Focus peak is 1.0. Sirius is blindingly bright, so we saturate the core.
       const exposure = 25.0; 
@@ -262,8 +261,13 @@
           let iRaw = sampleLUT(lutObj, u);
           let iExposed = iRaw * exposure;
           
-          // non-linear tone mapping
-          let mapped = Math.pow(Math.max(0, iExposed), gamma);
+          // Smooth, natural logarithmic tone curve (tuned for realistic visual perception)
+          const k = 44.0;
+          let mapped = 0;
+          if (iExposed > 0.0008) {
+            mapped = Math.log(1.0 + k * iExposed) / Math.log(1.0 + k);
+          }
+          mapped = Math.min(1.0, Math.max(0.0, mapped));
           
           // Add a subtle blue/white tint (Sirius is spectral type A1V)
           // Core is white, halo shifts slightly blue
