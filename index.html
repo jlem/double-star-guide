@@ -1462,61 +1462,75 @@
       object-fit: contain;
       display: block;
     }
-    .sim-zoom-controls {
-      position: absolute;
-      bottom: 1.25rem;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
+    .sim-mag-slider-container {
+      width: 100%;
+      max-width: 320px;
+      margin: 0.6rem auto 0 auto;
       background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 20px;
-      padding: 0.35rem 0.85rem;
+      border-radius: 12px;
+      padding: 0.5rem 0.75rem;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
       z-index: 10;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
       user-select: none;
     }
-    .sim-zoom-badge {
-      font-family: var(--font-mono);
-      font-size: 0.775rem;
-      font-weight: 600;
-      color: #94a3b8;
-      white-space: nowrap;
+    .sim-mag-slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
     }
-    .sim-zoom-reset-btn {
+    .sim-mag-slider-header strong {
+      color: #38bdf8;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+    .sim-mag-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    .sim-mag-slider {
+      flex: 1;
+      width: 100%;
+      cursor: pointer;
+      accent-color: var(--accent-blue, #3b82f6);
+    }
+    .sim-zoom-reset-square {
       background: var(--accent-blue, #3b82f6);
       color: #ffffff;
       border: none;
-      border-radius: 12px;
-      padding: 0.25rem 0.6rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      min-height: 28px;
       display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
+      justify-content: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
     }
-    .sim-zoom-reset-btn:hover {
+    .sim-zoom-reset-square:hover {
       background: #2563eb;
-      transform: scale(1.04);
+      transform: scale(1.06);
     }
-    body.night-vision .sim-zoom-controls {
-      background: rgba(30, 0, 0, 0.9);
-      border-color: #660000;
-    }
-    body.night-vision .sim-zoom-badge {
-      color: #ff6666;
-    }
-    body.night-vision .sim-zoom-reset-btn {
+    body.night-vision .sim-zoom-reset-square {
       background: #990000;
       color: #ffcccc;
     }
-    body.night-vision .sim-zoom-reset-btn:hover {
+    body.night-vision .sim-zoom-reset-square:hover {
       background: #cc0000;
     }
 
@@ -2057,20 +2071,19 @@
           <div class="sim-modal-svg-wrapper" id="simModalSvgWrapper" title="Use scroll wheel to zoom">
             <!-- Canvas rendered here -->
           </div>
-          <div class="sim-zoom-controls" id="simZoomControls">
-            <span class="sim-zoom-badge" id="simZoomBadge">250x</span>
-            <button class="sim-zoom-reset-btn" id="simZoomResetBtn" style="display: none;" title="Reset magnification to default 250x">
-              ↺ Reset Zoom
-            </button>
-          </div>
 
-          <!-- Touch-Friendly Eyepiece Magnification Range Slider -->
+          <!-- Eyepiece Magnification Control (Slider + Square Reset Icon) -->
           <div class="sim-mag-slider-container" id="simMagSliderContainer">
             <div class="sim-mag-slider-header">
-              <span>Eyepiece Magnification:</span>
+              <span>Eyepiece Zoom:</span>
               <strong id="simMagSliderVal">250x (4.2x/mm)</strong>
             </div>
-            <input type="range" id="simMagSlider" min="50" max="3000" step="10" value="250" class="sim-mag-slider">
+            <div class="sim-mag-slider-row">
+              <input type="range" id="simMagSlider" min="50" max="3000" step="10" value="250" class="sim-mag-slider">
+              <button class="sim-zoom-reset-square" id="simZoomResetBtn" style="display: none;" title="Reset magnification to default 250x">
+                ↺
+              </button>
+            </div>
           </div>
         </div>
 
@@ -3585,20 +3598,14 @@
       document.getElementById('modalRayleighVal').innerText = rayleigh.toFixed(2) + '"';
       document.getElementById('modalSepVal').innerText = (typeof star.sep === 'number' ? star.sep.toFixed(2) : star.sep) + '"';
 
-      // Update Reset Zoom button visibility & Zoom badge
+      // Update Reset Zoom button visibility & Zoom slider state
       const isDeviated = Math.abs(currentModalPower - 250.0) > 1.0;
       const resetBtn = document.getElementById('simZoomResetBtn');
-      const zoomBadge = document.getElementById('simZoomBadge');
       const magSlider = document.getElementById('simMagSlider');
       const magSliderVal = document.getElementById('simMagSliderVal');
 
       if (resetBtn) {
         resetBtn.style.display = isDeviated ? 'inline-flex' : 'none';
-        resetBtn.setAttribute('title', 'Reset magnification to default 250x');
-      }
-      if (zoomBadge) {
-        zoomBadge.innerText = `${Math.round(power)}x (${xPerMm}x/mm)`;
-        zoomBadge.style.color = isDeviated ? '#38bdf8' : '#94a3b8';
       }
       if (magSlider && magSliderVal) {
         const maxMag = Math.round(userAperture * 5.0);
@@ -3606,6 +3613,7 @@
         magSlider.max = maxMag;
         magSlider.value = Math.round(power);
         magSliderVal.innerText = `${Math.round(power)}x (${xPerMm}x/mm)`;
+        magSliderVal.style.color = isDeviated ? '#38bdf8' : '#94a3b8';
       }
 
       // Sync Optical Design toggle active button state in modal sidebar
