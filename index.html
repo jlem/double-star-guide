@@ -3697,8 +3697,8 @@
         if (thAppearance) thAppearance.style.display = "none";
       }
 
-      // Highlight active preset chip in telescope setup panel
-      document.querySelectorAll(".telescope-panel .preset-chip").forEach(btn => {
+      // Highlight active preset chip in telescope setup panel and simulation modal
+      document.querySelectorAll(".preset-chip").forEach(btn => {
         const ap = parseFloat(btn.getAttribute("data-aperture"));
         btn.classList.toggle("active", ap === userAperture);
       });
@@ -4332,12 +4332,20 @@
       });
 
       document.querySelectorAll(".modal-preset-chip").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (apertureDebounceTimer) clearTimeout(apertureDebounceTimer);
           const val = btn.getAttribute("data-aperture");
-          document.getElementById('modalApertureInput').value = val;
-          apertureInput.value = val;
-          updateTelescopeSetup();
-          renderSimulationModal();
+          const parsed = parseFloat(val);
+          if (parsed && parsed > 0) {
+            userAperture = parsed;
+            document.getElementById('modalApertureInput').value = val;
+            apertureInput.value = val;
+            updateTelescopeSetup();
+            if (currentModalStarId) {
+              renderSimulationModal();
+            }
+          }
         });
       });
 
