@@ -1435,10 +1435,11 @@
     }
     .sim-modal-svg-wrapper {
       aspect-ratio: 1 / 1 !important;
-      width: auto !important;
-      height: auto !important;
-      max-width: min(100%, 540px) !important;
-      max-height: min(calc(100% - 4.5rem), 540px) !important;
+      flex: 1 1 auto !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+      max-height: calc(100% - 4.5rem) !important;
       background: #000;
       border-radius: 50% !important;
       box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.05);
@@ -1449,7 +1450,8 @@
       box-sizing: border-box;
       cursor: ns-resize;
       margin: auto !important;
-      flex-shrink: 0 !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
     }
     .sim-modal-svg-wrapper svg {
       width: 100%;
@@ -2963,12 +2965,16 @@
       wrapper.innerHTML = '';
       wrapper.appendChild(canvas);
 
-      // Internal render resolution & fixed 1:1 CSS display size matching the circular viewport
+      // Internal render resolution & 100% 1:1 CSS display size matching the circular viewport
       canvas.width = renderSize;
       canvas.height = renderSize;
-      canvas.style.width = displaySize + 'px';
-      canvas.style.height = displaySize + 'px';
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      canvas.style.maxWidth = '100%';
+      canvas.style.maxHeight = '100%';
+      canvas.style.aspectRatio = '1 / 1';
       canvas.style.objectFit = 'contain';
+      canvas.style.borderRadius = '50%';
 
       const ctx = canvas.getContext('2d');
       const imageData = ctx.createImageData(renderSize, renderSize);
